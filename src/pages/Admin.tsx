@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
-import { useShop, type UiCategory, type UiCourse } from "@/lib/store";
 import { absoluteUploadUrl, api, type BackendUserRow } from "@/lib/api";
 import { formatINR } from "@/lib/data";
 import { cn } from "@/utils/cn";
+import { useShop, type UiCategory, type UiCourse, type UiPath } from "@/lib/store";
 
-type ATab = "overview" | "users" | "categories" | "courses" | "profile";
+type ATab = "overview" | "users" | "categories" | "courses" | "paths" | "profile";
 
 const adminNav: { id: ATab; label: string; icon: string }[] = [
   { id: "overview", label: "Dashboard", icon: "layout" },
   { id: "users", label: "Users", icon: "users" },
   { id: "categories", label: "Categories", icon: "grid" },
   { id: "courses", label: "Courses", icon: "book" },
+  { id: "paths", label: "Career Tracks", icon: "route" },
   { id: "profile", label: "Profile", icon: "user" },
 ];
 
@@ -161,7 +162,7 @@ function CourseModal({
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="field sm:col-span-2"><label>Title</label><input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="input" required /></div>
           <div className="field sm:col-span-2"><label>Short description</label><input value={form.shortDescription} onChange={(e) => setForm((f) => ({ ...f, shortDescription: e.target.value }))} className="input" /></div>
-          
+
           <div className="field sm:col-span-2">
             <label>Long Description</label>
             <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} className="input min-h-[80px]" placeholder="Full description about the course..." />
@@ -169,11 +170,11 @@ function CourseModal({
 
           <div className="field sm:col-span-2">
             <label>Course Objectives (What you'll learn)</label>
-            <textarea 
-              value={form.objectives} 
-              onChange={(e) => setForm((f) => ({ ...f, objectives: e.target.value }))} 
-              className="input min-h-[100px]" 
-              placeholder="Enter each objective on a new line. These will show as bullet points on the course page." 
+            <textarea
+              value={form.objectives}
+              onChange={(e) => setForm((f) => ({ ...f, objectives: e.target.value }))}
+              className="input min-h-[100px]"
+              placeholder="Enter each objective on a new line. These will show as bullet points on the course page."
             />
           </div>
 
@@ -196,7 +197,7 @@ function CourseModal({
 
           <div className="field"><label>Original price (₹)</label><input type="number" min="0" value={form.originalPrice} onChange={(e) => setForm((f) => ({ ...f, originalPrice: e.target.value }))} className="input" required /></div>
           <div className="field"><label>Discount price (₹)</label><input type="number" min="0" value={form.discountPrice} onChange={(e) => setForm((f) => ({ ...f, discountPrice: e.target.value }))} className="input" required /></div>
-          
+
           <div className="field"><label>Course length / Duration</label><input value={form.courseLength} onChange={(e) => setForm((f) => ({ ...f, courseLength: e.target.value }))} className="input" placeholder="e.g. 12h 30m" /></div>
           <div className="field"><label>Offer (optional)</label><input value={form.offerText} onChange={(e) => setForm((f) => ({ ...f, offerText: e.target.value }))} className="input" placeholder="e.g. Bestseller" /></div>
 
@@ -233,12 +234,133 @@ function CourseModal({
   );
 }
 
+function PathModal({
+  open, mode, initial, categories, onClose, onSave, uploadImage,
+}: {
+  open: boolean; mode: "new" | "edit"; initial: UiPath | null;
+  categories: UiCategory[];
+  onClose: () => void;
+  onSave: (data: {
+    title: string; description: string; imageUrl: string | null;
+    duration: string | null; level: string | null;
+    skills: string[]; outcomes: string; steps: string;
+    categoryId: number;
+  }) => Promise<boolean>;
+  uploadImage: (file: File) => Promise<string | null>;
+}) {
+  const [form, setForm] = useState({
+    title: "", description: "", imageUrl: "",
+    duration: "", level: "", skills: "", outcomes: "", steps: "",
+    categoryId: 0,
+  });
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        title: initial?.title || "",
+        description: initial?.description || "",
+        imageUrl: initial?.imageUrl || "",
+        duration: initial?.duration || "",
+        level: initial?.level || "",
+        skills: (initial?.skills || []).join(", "),
+        outcomes: initial?.outcomes || "",
+        steps: initial?.steps || "",
+        categoryId: initial?.categoryId || (categories[0]?.id ?? 0),
+      });
+    }
+  }, [open, initial, categories]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto p-4" role="dialog" aria-modal="true">
+      <button type="button" aria-label="Close" onClick={onClose} className="fixed inset-0 bg-ink/50 backdrop-blur-sm" />
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setSaving(true);
+          const ok = await onSave({
+            title: form.title,
+            description: form.description,
+            imageUrl: form.imageUrl || null,
+            duration: form.duration || null,
+            level: form.level || null,
+            skills: form.skills.split(",").map((s) => s.trim()).filter(Boolean),
+            outcomes: form.outcomes,
+            steps: form.steps,
+            categoryId: Number(form.categoryId),
+          });
+          setSaving(false);
+          if (ok) onClose();
+        }}
+        className="relative my-8 w-full max-w-2xl rounded-2xl bg-paper p-5 shadow-2xl"
+      >
+        <h3 className="font-display text-lg font-semibold">{mode === "new" ? "New career track" : "Edit career track"}</h3>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="field sm:col-span-2"><label>Title</label><input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="input" required /></div>
+          <div className="field sm:col-span-2"><label>Short description</label><textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} className="input min-h-[70px]" required /></div>
+
+          <div className="field"><label>Duration</label><input value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))} className="input" placeholder="e.g. 6 months" /></div>
+          <div className="field"><label>Level</label><input value={form.level} onChange={(e) => setForm((f) => ({ ...f, level: e.target.value }))} className="input" placeholder="e.g. Beginner to job-ready" /></div>
+
+          <div className="field sm:col-span-2"><label>Skills (comma-separated)</label><input value={form.skills} onChange={(e) => setForm((f) => ({ ...f, skills: e.target.value }))} className="input" placeholder="Linux, Docker, Kubernetes" /></div>
+
+          <div className="field sm:col-span-2"><label>Outcomes (one per line)</label><textarea value={form.outcomes} onChange={(e) => setForm((f) => ({ ...f, outcomes: e.target.value }))} className="input min-h-[80px]" placeholder={"Deploy production-grade containers\nAutomate CI/CD pipelines"} /></div>
+
+          <div className="field sm:col-span-2"><label>Sequence / Steps (one per line)</label><textarea value={form.steps} onChange={(e) => setForm((f) => ({ ...f, steps: e.target.value }))} className="input min-h-[80px]" placeholder={"Linux fundamentals\nDocker deep dive\nKubernetes in production"} /></div>
+
+          <div className="field">
+            <label>Category</label>
+            <select value={form.categoryId} onChange={(e) => setForm((f) => ({ ...f, categoryId: Number(e.target.value) }))} className="select" required>
+              <option value={0} disabled>Select category</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+
+          <div className="field sm:col-span-2">
+            <label>Image</label>
+            <div className="flex items-center gap-3">
+              <input ref={fileRef} type="file" accept="image/*" className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  setUploading(true);
+                  const url = await uploadImage(f);
+                  setUploading(false);
+                  if (url) setForm((prev) => ({ ...prev, imageUrl: url }));
+                }}
+              />
+              <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="btn btn-outline btn-sm">
+                {uploading ? "Uploading…" : "Choose image"}
+              </button>
+              {form.imageUrl && <img src={absoluteUploadUrl(form.imageUrl)} alt="" className="h-12 w-16 rounded object-cover" />}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 flex gap-2">
+          <button type="button" onClick={onClose} disabled={saving} className="btn btn-outline btn-sm flex-1">Cancel</button>
+          <button type="submit" disabled={saving || uploading} className="btn btn-primary btn-sm flex-1">
+            {saving ? "Saving…" : mode === "new" ? "Create track" : "Save changes"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+
 // ---------- Main Admin page ----------
 export default function Admin() {
   const {
     account, signOut, navigate, openAuth, toast,
     categories, categoriesLoading, createCategory, updateCategory, deleteCategory,
     courses, coursesLoading, createCourse, updateCourse, deleteCourse, uploadCourseImage,
+    paths, pathsLoading, createPath, updatePath, deletePath,
   } = useShop();
 
   const [tab, setTab] = useState<ATab>("overview");
@@ -252,6 +374,9 @@ export default function Admin() {
   const [courseModal, setCourseModal] = useState<null | "new" | "edit">(null);
   const [courseEdit, setCourseEdit] = useState<UiCourse | null>(null);
   const [courseDelete, setCourseDelete] = useState<UiCourse | null>(null);
+  const [pathModal, setPathModal] = useState<null | "new" | "edit">(null);
+  const [pathEdit, setPathEdit] = useState<UiPath | null>(null);
+  const [pathDelete, setPathDelete] = useState<UiPath | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   // courses pagination
@@ -515,6 +640,79 @@ export default function Admin() {
                   const ok = await deleteCourse(courseDelete.id);
                   setDeleting(false);
                   if (ok) setCourseDelete(null);
+                }}
+              />
+            </div>
+          )}
+
+          {/* CAREER TRACKS */}
+          {tab === "paths" && (
+            <div className="mt-5 overflow-hidden rounded-2xl border border-line bg-paper">
+              <div className="flex items-center justify-between border-b border-line px-4 py-3">
+                <h2 className="font-display text-[0.98rem] font-semibold">
+                  {pathsLoading ? "Loading…" : `${paths.length} career tracks`}
+                </h2>
+                <button type="button" onClick={() => { setPathEdit(null); setPathModal("new"); }} className="btn btn-sm btn-primary">
+                  <Icon name="plus" size={13} /> New track
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[800px] text-left">
+                  <thead className="bg-cream/60">
+                    <tr>{["Track", "Category", "Duration", "Level", ""].map((h) => (
+                      <th key={h} className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-muted">{h}</th>
+                    ))}</tr>
+                  </thead>
+                  <tbody className="divide-y divide-line-soft">
+                    {paths.length === 0 ? (
+                      <tr><td colSpan={5} className="px-4 py-8 text-center text-muted">No career tracks yet</td></tr>
+                    ) : paths.map((p) => (
+                      <tr key={p.id}>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            {p.imageUrl
+                              ? <img src={absoluteUploadUrl(p.imageUrl)} alt="" className="h-8 w-11 rounded object-cover" />
+                              : <div className="h-8 w-11 rounded bg-cream-deep" />}
+                            <p className="max-w-[240px] truncate text-[0.74rem] font-medium">{p.title}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-[0.68rem] text-muted">{p.categoryName}</td>
+                        <td className="px-4 py-3 text-[0.68rem] text-muted">{p.duration || "—"}</td>
+                        <td className="px-4 py-3 text-[0.68rem] text-muted">{p.level || "—"}</td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button type="button" onClick={() => { setPathEdit(p); setPathModal("edit"); }} className="text-[0.66rem] font-semibold text-ink hover:underline">Edit</button>
+                            <button type="button" onClick={() => setPathDelete(p)} className="text-[0.66rem] text-muted hover:text-coral">Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <PathModal
+                open={pathModal !== null}
+                mode={pathModal === "edit" ? "edit" : "new"}
+                initial={pathEdit}
+                categories={categories}
+                onClose={() => { setPathModal(null); setPathEdit(null); }}
+                onSave={async (data) => {
+                  if (pathModal === "edit" && pathEdit) return updatePath(pathEdit.id, data);
+                  return createPath(data);
+                }}
+                uploadImage={uploadCourseImage}
+              />
+
+              <ConfirmDialog
+                open={!!pathDelete} title="Delete career track?" message={`"${pathDelete?.title}" will be permanently removed.`}
+                onCancel={() => setPathDelete(null)} loading={deleting}
+                onConfirm={async () => {
+                  if (!pathDelete) return;
+                  setDeleting(true);
+                  const ok = await deletePath(pathDelete.id);
+                  setDeleting(false);
+                  if (ok) setPathDelete(null);
                 }}
               />
             </div>

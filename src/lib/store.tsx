@@ -37,6 +37,20 @@ export type UiCourse = {
   createdAt: string;
 };
 
+export type UiPath = {
+  id: number;
+  title: string;
+  description: string;
+  imageUrl: string;
+  duration: string;
+  level: string;
+  skills: string[];
+  outcomes: string;
+  steps: string;
+  categoryId: number;
+  categoryName: string;
+};
+
 export type CartItem = { id: number; courseId: number; title: string; price: number; imageUrl: string | null };
 
 type ShopValue = {
@@ -98,6 +112,12 @@ type ShopValue = {
   couponPercent: number;
   applyCoupon: (code: string) => boolean;
   removeCoupon: () => void;
+  paths: UiPath[];
+  pathsLoading: boolean;
+  refreshPaths: () => Promise<void>;
+  createPath: (body: any) => Promise<boolean>;
+  updatePath: (id: number, patch: any) => Promise<boolean>;
+  deletePath: (id: number) => Promise<boolean>;
 };
 
 const ShopContext = createContext<ShopValue | null>(null);
@@ -158,6 +178,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [cartOpen, setCartOpen] = useState(false);
   const [wishlistIds, setWishlistIds] = useState<number[]>([]);
   const [coupon, setCoupon] = useState<string | null>(null);
+  const [paths, setPaths] = useState<UiPath[]>([]);
+  const [pathsLoading, setPathsLoading] = useState(true);
 
   const toast = useCallback((message: string, tone: Toast["tone"] = "success") => {
     const id = ++toastId.current;
@@ -165,6 +187,65 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     window.setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3400);
   }, []);
   const dismissToast = useCallback((id: number) => setToasts((prev) => prev.filter((t) => t.id !== id)), []);
+
+  const refreshPaths = useCallback(async () => {
+    try {
+      const res = await api.listPaths();
+      setPaths(
+        res.paths.map((p) => ({
+          ...p,
+          imageUrl: p.imageUrl || "",
+          duration: p.duration ?? "",
+          level: p.level ?? "",
+          skills: p.skills ?? [],
+          outcomes: p.outcomes ?? "",
+          steps: p.steps ?? "",
+        }))
+      );
+    } catch {
+      // swallow — loading state handled by caller
+    }
+  }, []);
+
+  const createPath = useCallback(async (body: any) => {
+    try {
+      await api.createPath(body);
+      await refreshPaths();
+      toast("Career path created");
+      return true;
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Create failed", "error");
+      return false;
+    }
+  }, [refreshPaths, toast]);
+
+  const updatePath = useCallback(async (id: number, patch: any) => {
+    try {
+      await api.updatePath(id, patch);
+      await refreshPaths();
+      toast("Career path updated");
+      return true;
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Update failed", "error");
+      return false;
+    }
+  }, [refreshPaths, toast]);
+
+  const deletePath = useCallback(async (id: number) => {
+    try {
+      await api.deletePath(id);
+      await refreshPaths();
+      toast("Career path deleted");
+      return true;
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Delete failed", "error");
+      return false;
+    }
+  }, [refreshPaths, toast]);
+
+  useEffect(() => {
+    refreshPaths().finally(() => setPathsLoading(false));
+  }, [refreshPaths]);
 
   useEffect(() => {
     (async () => {
@@ -365,6 +446,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     cartItems, cartLoading, cartOpen, setCartOpen, addToCart, removeFromCart, refreshCart,
     wishlistIds, toggleWishlist, inWishlist,
     coupon, couponPercent, applyCoupon, removeCoupon,
+    paths, pathsLoading, refreshPaths, createPath, updatePath, deletePath,
   }), [
     route, navigate, toasts, toast, dismissToast, searchTerm,
     account, signIn, signUp, signOut, authLoading, authOpen, authMode, authRole, openAuth, careerOpen,
@@ -373,6 +455,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     cartItems, cartLoading, cartOpen, addToCart, removeFromCart, refreshCart,
     wishlistIds, toggleWishlist, inWishlist,
     coupon, couponPercent, applyCoupon, removeCoupon,
+    paths, pathsLoading, refreshPaths, createPath, updatePath, deletePath,
   ]);
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;

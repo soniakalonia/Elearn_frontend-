@@ -44,17 +44,18 @@ const skillProgress = [
 ];
 
 export default function Dashboard() {
-  const { learner, wishlist, navigate, toast, cart, account, signOut, openAuth, setCareerOpen } = useShop();
+  const { wishlistIds, navigate, toast, cartItems, account, signOut, openAuth, setCareerOpen, courses: shopCourses } = useShop();
   const [tab, setTab] = useState<Tab>("overview");
   const [passwordForm, setPasswordForm] = useState({ current: "", next: "", confirm: "" });
 
-  const displayName = account?.name ?? learner.name;
-  const displayEmail = account?.email ?? learner.email;
-  const displayPlan = account ? (account.role === "admin" ? "Administrator" : "Pro member") : learner.plan;
+  const displayName = account?.name ?? "Learner";
+  const displayEmail = account?.email ?? "";
+  const displayPlan = account?.role === "admin" ? "Administrator" : "Pro member";
   const initials = displayName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
   const currentCourse = courseBySlug(learningCourses[0].slug);
-  const savedCourses = courses.filter((c) => wishlist.includes(c.slug));
+  const savedCourses = shopCourses.filter((c) => wishlistIds.includes(c.id));
+
   const enrolled = learningCourses
     .map((entry) => ({ entry, course: courseBySlug(entry.slug) }))
     .filter((item): item is { entry: (typeof learningCourses)[number]; course: NonNullable<ReturnType<typeof courseBySlug>> } => Boolean(item.course));
@@ -81,10 +82,10 @@ export default function Dashboard() {
           <p className="mt-2 text-[0.85rem] leading-relaxed text-muted">
             Your dashboard keeps your courses, progress, certificates and AI mentor roadmap in one place.
           </p>
-          <button type="button" onClick={() => openAuth("learner", "signin")} className="btn btn-primary btn-block mt-5">
+          <button type="button" onClick={() => openAuth("user", "signin")} className="btn btn-primary btn-block mt-5">
             Sign in as learner <Icon name="arrowRight" size={15} />
           </button>
-          <button type="button" onClick={() => openAuth("learner", "signup")} className="btn btn-outline btn-block btn-sm mt-2">Create a free account</button>
+          <button type="button" onClick={() => openAuth("user", "signup")} className="btn btn-outline btn-block btn-sm mt-2">Create a free account</button>
           <p className="mt-3 rounded-lg bg-cream px-3 py-2 text-[0.64rem] text-muted">
             Demo: <span className="font-mono">student@elearnhub.in</span> · <span className="font-mono">learn@2026</span>
           </p>
@@ -134,8 +135,8 @@ export default function Dashboard() {
                 >
                   <Icon name={item.icon} size={15} className={tab === item.id ? "text-lime" : ""} />
                   {item.label}
-                  {item.id === "wishlist" && wishlist.length > 0 && (
-                    <span className="ml-auto rounded-full bg-lime px-1.5 py-0.5 text-[0.54rem] font-bold text-ink">{wishlist.length}</span>
+                  {item.id === "wishlist" && wishlistIds.length > 0 && (
+                    <span className="ml-auto rounded-full bg-lime px-1.5 py-0.5 text-[0.54rem] font-bold text-ink">{wishlistIds.length}</span>
                   )}
                   {item.id === "courses" && <span className="ml-auto text-[0.6rem] text-white/35">{enrolled.length}</span>}
                 </button>
@@ -409,12 +410,12 @@ export default function Dashboard() {
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {savedCourses.map((course) => (
-                    <div key={course.slug} className="card flex gap-3 p-3">
-                      <img src={course.image} alt="" className="h-16 w-20 shrink-0 rounded-lg object-cover" />
+                    <div key={course.id} className="card flex gap-3 p-3">
+                      <img src={course.imageUrl} alt="" className="h-16 w-20 shrink-0 rounded-lg object-cover" />
                       <div className="min-w-0 flex-1">
                         <h3 className="line-clamp-2 text-[0.78rem] font-semibold">{course.title}</h3>
-                        <p className="mt-0.5 text-[0.64rem] text-muted">{formatINR(course.price)} · {course.level}</p>
-                        <a href={`#/course/${course.slug}`} className="mt-1.5 inline-flex items-center gap-1 text-[0.64rem] font-semibold text-ink hover:underline">View course <Icon name="arrowRight" size={10} /></a>
+                        <p className="mt-0.5 text-[0.64rem] text-muted">{formatINR(course.discountPrice)} · {course.categoryName}</p>
+                        <a href={`#/course/${course.id}`} className="mt-1.5 inline-flex items-center gap-1 text-[0.64rem] font-semibold text-ink hover:underline">View course <Icon name="arrowRight" size={10} /></a>
                       </div>
                     </div>
                   ))}
@@ -550,7 +551,7 @@ export default function Dashboard() {
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div className="field"><label htmlFor="set-first">First name</label><input id="set-first" defaultValue="Aditi" className="input" /></div>
                   <div className="field"><label htmlFor="set-last">Last name</label><input id="set-last" defaultValue="Sharma" className="input" /></div>
-                  <div className="field sm:col-span-2"><label htmlFor="set-email">Email</label><input id="set-email" type="email" defaultValue={learner.email} className="input" /></div>
+                  <div className="field sm:col-span-2"><label htmlFor="set-email">Email</label><input id="set-email" type="email" defaultValue={displayEmail} className="input" /></div>
                   <div className="field sm:col-span-2"><label htmlFor="set-goal">Career goal</label><input id="set-goal" defaultValue="DevOps Engineer" className="input" /></div>
                 </div>
               </div>
@@ -575,7 +576,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 lg:col-span-2">
                 <button type="submit" className="btn btn-primary btn-sm">Save changes</button>
                 <button type="button" onClick={() => toast("Nothing to undo", "info")} className="btn btn-outline btn-sm">Discard</button>
-                {cart.length > 0 && <span className="ml-auto text-[0.64rem] text-muted">You have {cart.length} item(s) in your bag</span>}
+                {cartItems.length > 0 && <span className="ml-auto text-[0.64rem] text-muted">You have {cartItems.length} item(s) in your bag</span>}
               </div>
             </form>
           )}

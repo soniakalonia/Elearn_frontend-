@@ -9,7 +9,6 @@ import Home from "@/pages/Home";
 import Courses from "@/pages/Courses";
 import CourseDetail from "@/pages/CourseDetail";
 import Paths from "@/pages/Paths";
-import Pricing from "@/pages/Pricing";
 import Mentor from "@/pages/Mentor";
 import Reviews from "@/pages/Reviews";
 import About from "@/pages/About";
@@ -24,7 +23,6 @@ const titles: Record<string, string> = {
   home: "Elearn Hub — Learn today's skills. Build tomorrow's career.",
   courses: "Courses · Elearn Hub",
   paths: "Career tracks · Elearn Hub",
-  pricing: "Pricing & membership · Elearn Hub",
   mentor: "AI career mentor · Elearn Hub",
   reviews: "Learner reviews · Elearn Hub",
   about: "About us · Elearn Hub",
@@ -68,7 +66,6 @@ function Router() {
       return <CourseDetail id={id} />;
     }
     if (base === "paths") return <Paths />;
-    if (base === "pricing") return <Pricing />;
     if (base === "mentor") return <Mentor />;
     if (base === "reviews") return <Reviews />;
     if (base === "about") return <About />;

@@ -58,6 +58,21 @@ export type BackendCourse = {
   updatedAt: string;
 };
 
+
+export type BackendPath = {
+  id: number;
+  title: string;
+  description: string;
+  imageUrl: string | null;
+  duration: string | null;
+  level: string | null;
+  skills: string[];        // array in JS, JSON in DB
+  outcomes: string;        // newline-separated
+  steps: string;           // newline-separated
+  categoryId: number;
+  categoryName: string;
+};
+
 export const api = {
   signup: (body: { name: string; email: string; password: string; phone?: string }) =>
     request<{ user: BackendUser; token: string }>("/auth/signup", { method: "POST", body: JSON.stringify(body) }),
@@ -127,4 +142,8 @@ export const api = {
 
   listWishlist: () => request<{ courseIds: number[] }>("/wishlist"),
   toggleWishlist: (courseId: number) => request<{ added: boolean; courseIds: number[] }>("/wishlist/toggle", { method: "POST", body: JSON.stringify({ courseId }) }),
+   listPaths: () => request<{ paths: BackendPath[] }>("/paths"),
+  createPath: (body: any) => request<{ path: BackendPath }>("/paths", { method: "POST", body: JSON.stringify(body) }),
+  updatePath: (id: number, patch: any) => request<{ path: BackendPath }>(`/paths/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deletePath: (id: number) => request<{}>(`/paths/${id}`, { method: "DELETE" }),
 };

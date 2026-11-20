@@ -7,10 +7,8 @@ const columns = [
     links: [
       { label: "All courses", href: "#/courses" },
       { label: "Career tracks", href: "#/paths" },
-      { label: "Subscription plans", href: "#/pricing" },
       { label: "Career guidance (members)", href: "#/dashboard" },
       { label: "Learner reviews", href: "#/reviews" },
-      { label: "Gift a course", href: "#/pricing" },
     ],
   },
   {
@@ -20,7 +18,6 @@ const columns = [
       { label: "Contact us", href: "#/contact" },
       { label: "Teach with us", href: "#/contact" },
       { label: "Careers", href: "#/about" },
-      { label: "For teams", href: "#/pricing" },
       { label: "Student stories", href: "#/reviews" },
     ],
   },

@@ -156,11 +156,11 @@ export default function Header() {
               <Icon name="sparkle" size={10} strokeWidth={2} />
             </span>
             <span className="truncate">
-              New year, new skills — <span className="font-semibold text-lime">25% off</span> annual plans
+              New year, new skills — <span className="font-semibold text-lime">start free</span> today
             </span>
           </p>
           <div className="hidden shrink-0 items-center gap-5 text-white/70 md:flex">
-            <a href="#/pricing" className="transition-colors hover:text-lime">For teams</a>
+            <a href="#/contact" className="transition-colors hover:text-lime">For teams</a>
             <span className="h-3 w-px bg-white/20" />
             <span className="flex items-center gap-1.5"><Icon name="shieldCheck" size={11} className="text-lime" /> 7-day money-back</span>
           </div>
@@ -181,7 +181,7 @@ export default function Header() {
             <nav className="hidden items-center gap-1 md:flex" aria-label="Main navigation">
               <a href="#/courses" className={cn("rounded-full px-3.5 py-2 text-[0.79rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink", isActive("courses") && "bg-cream text-ink")}>Courses</a>
               <a href="#/paths" className={cn("hidden rounded-full px-3.5 py-2 text-[0.79rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink lg:block", isActive("paths") && "bg-cream text-ink")}>Career tracks</a>
-              <a href="#/pricing" className={cn("rounded-full px-3.5 py-2 text-[0.79rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink", isActive("pricing") && "bg-cream text-ink")}>Pricing</a>
+              <a href="#/contact" className={cn("rounded-full px-3.5 py-2 text-[0.79rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink", isActive("contact") && "bg-cream text-ink")}>Contact us</a>
             </nav>
 
             <div className="ml-auto flex items-center gap-1 md:gap-2">
@@ -289,7 +289,7 @@ export default function Header() {
                     {[
                       { label: "All courses", href: "courses", icon: "grid" },
                       { label: "Learning paths", href: "paths", icon: "route" },
-                      { label: "Subscription & pricing", href: "pricing", icon: "ticket" },
+                      { label: "Contact us", href: "contact", icon: "mail" },
                       ...(account ? [{ label: "My learning", href: "dashboard", icon: "graduation" }] : []),
                       ...(account?.role === "admin" ? [{ label: "Admin console", href: "admin", icon: "settings" }] : []),
                     ].map((item) => (
