@@ -218,5 +218,46 @@ export const api = {
     request<{ order: BackendOrder }>(`/orders/${id}`),
   createOrder: (body: { items: { courseId: number; title: string; price: number }[]; subtotal: number; discount: number; total: number; paymentMethod?: string; paymentRef?: string }) =>
     request<{ order: BackendOrder }>("/orders", { method: "POST", body: JSON.stringify(body) }),
-    getAdminStats: () => request<AdminStats>("/admin/stats"),
+  getAdminStats: () => request<AdminStats>("/admin/stats"),
+
+  createRazorpayOrder: (body: { name: string; email: string; phone: string; country: string }) =>
+    request<{
+      orderId: number;
+      orderCode: string;
+      razorpayOrderId: string;
+      amount: number;
+      currency: string;
+      key: string;
+      prefill: { name: string; email: string; contact: string };
+      notes: Record<string, string>;
+    }>("/payments/razorpay/create", { method: "POST", body: JSON.stringify(body) }),
+
+  verifyRazorpayPayment: (body: {
+    orderId: number;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) =>
+    request<{ orderId: number; orderCode: string; status: string; total: number; alreadyPaid?: boolean }>(
+      "/payments/razorpay/verify",
+      { method: "POST", body: JSON.stringify(body) }
+    ),
 };
+/**
+ * Loads the Razorpay Checkout script once and caches the promise.
+ */
+let razorpayScriptPromise: Promise<void> | null = null;
+export function loadRazorpayScript(): Promise<void> {
+  if (typeof window === "undefined") return Promise.reject(new Error("No window"));
+  if ((window as any).Razorpay) return Promise.resolve();
+  if (razorpayScriptPromise) return razorpayScriptPromise;
+  razorpayScriptPromise = new Promise<void>((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Failed to load Razorpay Checkout"));
+    document.body.appendChild(s);
+  });
+  return razorpayScriptPromise;
+}
