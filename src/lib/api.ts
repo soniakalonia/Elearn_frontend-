@@ -72,7 +72,63 @@ export type BackendPath = {
   categoryId: number;
   categoryName: string;
 };
+export type BackendEnrollment = {
+  id: number;
+  userId: number;
+  courseId: number;
+  progress: number;
+  lastLesson: string | null;
+  lastAccessedAt: string | null;
+  completedAt: string | null;
+  courseTitle: string;
+  courseImage: string | null;
+  courseLength: string | null;
+  categoryId: number;
+  categoryName: string | null;
+};
 
+export type BackendOrder = {
+  id: number;
+  userId: number;
+  orderCode: string;
+  subtotal: number;
+  discount: number;
+  total: number;
+  currency: string;
+  status: "pending" | "paid" | "failed" | "refunded";
+  paymentMethod: string | null;
+  paymentRef: string | null;
+  createdAt: string;
+  itemCount: number;
+  itemsSummary: string;
+  items?: { id: number; courseId: number; title: string; price: number }[];
+};
+export type AdminStatsTotals = {
+  revenue: number;
+  paidOrders: number;
+  activeLearners: number;
+  liveCourses: number;
+  totalCourses: number;
+  totalEnrollments: number;
+};
+
+export type AdminStatsRevenueDay = { date: string; amount: number };
+export type AdminStatsSignupDay = { date: string; count: number };
+export type AdminStatsTopCourse = { id: number; title: string; enrollments: number };
+export type AdminStatsRecentEnrollment = {
+  userName: string;
+  userEmail: string;
+  courseTitle: string;
+  createdAt: string;
+};
+
+export type AdminStats = {
+  totals: AdminStatsTotals;
+  revenueLast7Days: AdminStatsRevenueDay[];
+  signupsLast30Days: AdminStatsSignupDay[];
+  topCourses: AdminStatsTopCourse[];
+  recentEnrollments: AdminStatsRecentEnrollment[];
+};
 export const api = {
   signup: (body: { name: string; email: string; password: string; phone?: string }) =>
     request<{ user: BackendUser; token: string }>("/auth/signup", { method: "POST", body: JSON.stringify(body) }),
@@ -146,4 +202,21 @@ export const api = {
   createPath: (body: any) => request<{ path: BackendPath }>("/paths", { method: "POST", body: JSON.stringify(body) }),
   updatePath: (id: number, patch: any) => request<{ path: BackendPath }>(`/paths/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deletePath: (id: number) => request<{}>(`/paths/${id}`, { method: "DELETE" }),
+
+    listMyEnrollments: () =>
+    request<{ enrollments: BackendEnrollment[] }>("/enrollments/mine"),
+  enrollmentStats: () =>
+    request<{ stats: { total: number; completed: number; progress_sum: number } }>("/enrollments/stats"),
+  createEnrollment: (courseId: number) =>
+    request<{ enrollment: BackendEnrollment }>("/enrollments", { method: "POST", body: JSON.stringify({ courseId }) }),
+  updateEnrollmentProgress: (courseId: number, patch: { progress?: number; lastLesson?: string }) =>
+    request<{ enrollment: BackendEnrollment }>(`/enrollments/${courseId}/progress`, { method: "PATCH", body: JSON.stringify(patch) }),
+
+  listMyOrders: (limit?: number) =>
+    request<{ orders: BackendOrder[] }>(`/orders/mine${limit ? `?limit=${limit}` : ""}`),
+  getOrder: (id: number) =>
+    request<{ order: BackendOrder }>(`/orders/${id}`),
+  createOrder: (body: { items: { courseId: number; title: string; price: number }[]; subtotal: number; discount: number; total: number; paymentMethod?: string; paymentRef?: string }) =>
+    request<{ order: BackendOrder }>("/orders", { method: "POST", body: JSON.stringify(body) }),
+    getAdminStats: () => request<AdminStats>("/admin/stats"),
 };

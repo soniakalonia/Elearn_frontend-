@@ -11,10 +11,8 @@ import {
   Stars,
   useCountdown,
 } from "@/components/Primitives";
-import { BillingToggle, PlanCard } from "@/components/PlanCards";
 import {
   faqs,
-  plans,
   reviews,
   stats,
   tools,
@@ -131,29 +129,12 @@ function Hero() {
             </div>
           </Reveal>
 
-          <Reveal delay={270}>
-            <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
-              <div className="flex items-center">
-                {[reviews[0].avatar, reviews[1].avatar, reviews[3].avatar, reviews[6].avatar].map((src, i) => (
-                  <Avatar key={i} src={src} size={32} className={i > 0 ? "-ml-2.5" : ""} />
-                ))}
-                <span className="-ml-2.5 grid h-8 w-8 place-items-center rounded-full border-2 border-paper bg-ink text-[0.55rem] font-semibold text-white">
-                  42k
-                </span>
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <Stars rating={4.9} size={12} />
-                  <span className="text-[0.72rem] font-semibold text-ink">4.9/5</span>
-                </div>
-                <p className="text-[0.68rem] text-muted">from 3,240 verified learner reviews</p>
-              </div>
-              <span className="hidden h-8 w-px bg-line sm:block" />
-              <p className="flex items-center gap-1.5 text-[0.7rem] text-ink-soft">
-                <Icon name="shieldCheck" size={14} className="text-plum" /> 7-day money-back guarantee
-              </p>
-            </div>
-          </Reveal>
+<Reveal delay={270}>
+  <p className="mt-7 flex items-center gap-1.5 text-[0.7rem] text-ink-soft">
+    <Icon name="shieldCheck" size={14} className="text-plum" /> 7-day money-back guarantee
+  </p>
+</Reveal>
+
         </div>
 
         {/* visual */}
@@ -270,7 +251,8 @@ function ToolMarquee() {
 }
 
 function Categories() {
-  const { categories, categoriesLoading } = useShop();
+  const { categories, categoriesLoading, courses } = useShop(); // Added 'courses' here
+
   return (
     <section className="section-pad relative">
       <div className="wrap">
@@ -285,21 +267,44 @@ function Categories() {
 
         <div className="mt-9 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
           {categoriesLoading
-            ? Array.from({ length: 8 }).map((_, i) => <div key={i} className="card h-32 animate-pulse bg-cream-deep/40" />)
+            ? Array.from({ length: 8 }).map((_, i) => <div key={i} className="card h-40 animate-pulse bg-cream-deep/40" />)
             : categories.length === 0
               ? <p className="col-span-full text-center text-muted">No categories yet — add one from the Admin console.</p>
-              : categories.map((cat, i) => (
-                <Reveal key={cat.id} delay={i * 45}>
-                  <a href={`#/courses?category=${cat.id}`} className="group card card-hover flex h-full flex-col p-4 md:p-5">
-                    <div className="flex items-start justify-between">
-                      <span className="icon-tile" style={{ background: "#CDF56A" }}><Icon name="grid" size={19} /></span>
-                      <span className="rounded-full bg-cream px-2 py-0.5 text-[0.6rem] text-muted">{cat.count} courses</span>
-                    </div>
-                    <h3 className="mt-4 font-display text-[0.98rem] font-semibold">{cat.name}</h3>
-                    <p className="mt-1 line-clamp-2 text-[0.72rem] text-muted">{cat.shortHeading || cat.description}</p>
-                  </a>
-                </Reveal>
-              ))}
+              : categories.map((cat, i) => {
+                  // Find the first course in this category that actually has an image
+                  const courseWithImage = courses.find((c) => c.categoryId === cat.id && c.imageUrl);
+                  const imageUrl = courseWithImage ? absoluteUploadUrl(courseWithImage.imageUrl) : null;
+
+                  return (
+                    <Reveal key={cat.id} delay={i * 45}>
+                      <a href={`#/courses?category=${cat.id}`} className="group card card-hover flex h-full flex-col overflow-hidden p-0">
+                        {/* Image Section */}
+                        <div className="relative h-28 w-full bg-cream-deep overflow-hidden">
+                          {imageUrl ? (
+                            <img 
+                              src={imageUrl} 
+                              alt={cat.name} 
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                            />
+                          ) : (
+                            <div className="grid h-full w-full place-items-center bg-lime/20 text-ink/40">
+                               <Icon name="grid" size={24} />
+                            </div>
+                          )}
+                          <span className="absolute right-2 top-2 rounded-full bg-paper/90 backdrop-blur px-2 py-0.5 text-[0.6rem] font-medium text-ink shadow-sm">
+                            {cat.count} courses
+                          </span>
+                        </div>
+                        
+                        {/* Content Section */}
+                        <div className="flex flex-1 flex-col p-4">
+                          <h3 className="font-display text-[0.98rem] font-semibold group-hover:text-plum transition-colors">{cat.name}</h3>
+                          <p className="mt-1 line-clamp-2 text-[0.72rem] text-muted">{cat.shortHeading || cat.description}</p>
+                        </div>
+                      </a>
+                    </Reveal>
+                  );
+                })}
         </div>
       </div>
     </section>
@@ -514,157 +519,6 @@ function MentorTeaser() {
   );
 }
 
-function PricingPreview() {
-  const [billing, setBilling] = useState<"monthly" | "annual">("annual");
-  return (
-    <section className="section-pad border-b border-line bg-cream">
-      <div className="wrap">
-        <Reveal>
-          <SectionHead
-            align="center"
-            eyebrow="Simple, honest pricing"
-            title={<>One membership. <span className="italic-accent text-plum">Every skill.</span></>}
-            copy="Start free, upgrade when you're ready. Individual courses are always available too."
-            action={undefined}
-          />
-          <div className="mt-6 flex justify-center">
-            <BillingToggle billing={billing} onChange={setBilling} />
-          </div>
-        </Reveal>
-        <div className="mt-10 grid items-stretch gap-4 md:grid-cols-3 lg:gap-5">
-          {plans.map((plan, i) => (
-            <Reveal key={plan.id} delay={i * 70}>
-              <PlanCard plan={plan} billing={billing} compact />
-            </Reveal>
-          ))}
-        </div>
-        <Reveal>
-          <p className="mt-7 text-center text-[0.74rem] text-muted">
-            All prices in INR, GST included.{" "}
-            <a href="#/contact" className="font-semibold text-ink underline decoration-2 underline-offset-4">
-              Talk to us
-            </a>{" "}
-            · Team of 5+? <a href="#/contact" className="font-semibold text-ink underline underline-offset-4">Talk to us</a>.
-          </p>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-function LearnerReviews() {
-  const [index, setIndex] = useState(0);
-  const pool = reviews.slice(0, 6);
-  const visible = [pool[index % pool.length], pool[(index + 1) % pool.length]];
-  const bars = [
-    { stars: 5, percent: 86 },
-    { stars: 4, percent: 9 },
-    { stars: 3, percent: 3 },
-    { stars: 2, percent: 1 },
-    { stars: 1, percent: 1 },
-  ];
-
-  return (
-    <section className="section-pad bg-paper">
-      <div className="wrap grid gap-10 lg:grid-cols-[.72fr_1.28fr] lg:gap-14">
-        <Reveal>
-          <p className="eyebrow mb-3">
-            <span className="h-1.5 w-1.5 rounded-full bg-coral" /> Learner stories
-          </p>
-          <h2 className="display text-[clamp(2rem,3.5vw,3rem)]">
-            Careers, <span className="italic-accent text-plum">changed.</span>
-          </h2>
-          <div className="mt-6 flex items-end gap-3">
-            <span className="font-display text-[3.5rem] font-semibold leading-none tracking-tight">4.9</span>
-            <div className="pb-1">
-              <Stars rating={4.9} size={16} />
-              <p className="mt-1 text-[0.7rem] text-muted">3,240 verified reviews</p>
-            </div>
-          </div>
-          <div className="mt-5 space-y-1.5">
-            {bars.map((bar) => (
-              <div key={bar.stars} className="flex items-center gap-2">
-                <span className="w-3 text-[0.66rem] text-muted">{bar.stars}</span>
-                <Icon name="star" size={10} className="text-gold" />
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-cream-deep">
-                  <div className="h-full rounded-full bg-ink/75" style={{ width: `${bar.percent}%` }} />
-                </div>
-                <span className="w-7 text-right text-[0.62rem] text-muted">{bar.percent}%</span>
-              </div>
-            ))}
-          </div>
-          <a href="#/reviews" className="btn btn-outline mt-6">
-            Read all reviews <Icon name="arrowRight" size={15} />
-          </a>
-          <div className="mt-6 flex items-center gap-2 rounded-xl border border-line bg-cream/60 p-3 text-[0.68rem] text-muted">
-            <Icon name="shieldCheck" size={15} className="shrink-0 text-plum" />
-            Every review is tied to a verified course completion.
-          </div>
-        </Reveal>
-
-        <Reveal delay={80}>
-          <div className="flex h-full flex-col">
-            <div className="grid flex-1 gap-4 sm:grid-cols-2">
-              {visible.map((review, i) => (
-                <article key={review.id + i} className="card flex h-full flex-col p-5">
-                  <div className="flex items-center justify-between">
-                    <Stars rating={review.rating} size={14} />
-                    <Icon name="quote" size={24} className="text-lime-deep" strokeWidth={1.2} />
-                  </div>
-                  <h3 className="mt-3 font-display text-[1.02rem] font-semibold leading-snug">{review.title}</h3>
-                  <p className="mt-2 flex-1 text-[0.8rem] leading-relaxed text-muted">"{review.text}"</p>
-                  <div className="mt-4 border-t border-line-soft pt-3">
-                    <div className="flex items-center gap-2.5">
-                      <Avatar src={review.avatar} size={34} />
-                      <div>
-                        <p className="text-[0.76rem] font-semibold text-ink">{review.name}</p>
-                        <p className="text-[0.64rem] text-muted">{review.role}</p>
-                      </div>
-                    </div>
-                    <span className="mt-3 flex items-center justify-between gap-2 rounded-lg bg-cream px-2.5 py-2 text-[0.62rem] text-ink-soft">
-                      <span className="truncate">{review.course}</span>
-                    </span>
-                  </div>
-                </article>
-              ))}
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                {pool.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setIndex(i)}
-                    aria-label={`Show review ${i + 1}`}
-                    className={cn("h-1.5 rounded-full transition-all", i === index ? "w-6 bg-ink" : "w-1.5 bg-line hover:bg-muted")}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setIndex((i) => (i - 1 + pool.length) % pool.length)}
-                  aria-label="Previous reviews"
-                  className="grid h-9 w-9 place-items-center rounded-full border border-line bg-paper transition-colors hover:border-ink"
-                >
-                  <Icon name="arrowLeft" size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIndex((i) => (i + 1) % pool.length)}
-                  aria-label="Next reviews"
-                  className="grid h-9 w-9 place-items-center rounded-full border border-ink bg-ink text-white transition-colors hover:bg-plum-soft"
-                >
-                  <Icon name="arrowRight" size={15} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
 
 function OfferBanner() {
   const { applyCoupon, toast, navigate } = useShop();
@@ -805,8 +659,6 @@ export default function Home() {
       <Featured />
       <CareerTracks />
       <MentorTeaser />
-      <PricingPreview />
-      <LearnerReviews />
       <OfferBanner />
       <FaqPreview />
 

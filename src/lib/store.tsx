@@ -50,6 +50,33 @@ export type UiPath = {
   categoryId: number;
   categoryName: string;
 };
+export type UiEnrollment = {
+  id: number;
+  courseId: number;
+  progress: number;
+  lastLesson: string | null;
+  lastAccessedAt: string | null;
+  completedAt: string | null;
+  courseTitle: string;
+  courseImage: string | null;
+  courseLength: string | null;
+  categoryId: number;
+  categoryName: string | null;
+};
+
+export type UiOrder = {
+  id: number;
+  orderCode: string;
+  subtotal: number;
+  discount: number;
+  total: number;
+  currency: string;
+  status: "pending" | "paid" | "failed" | "refunded";
+  paymentMethod: string | null;
+  createdAt: string;
+  itemCount: number;
+  itemsSummary: string;
+};
 
 export type CartItem = { id: number; courseId: number; title: string; price: number; imageUrl: string | null };
 
@@ -96,6 +123,14 @@ type ShopValue = {
     status: "draft" | "live" | "paused";
     imageUrl: string | null; offerText: string | null; courseLength: string | null;
   }>) => Promise<boolean>;
+    enrollments: UiEnrollment[];
+  enrollmentsLoading: boolean;
+  refreshEnrollments: () => Promise<void>;
+  updateEnrollmentProgress: (courseId: number, patch: { progress?: number; lastLesson?: string }) => Promise<boolean>;
+
+  orders: UiOrder[];
+  ordersLoading: boolean;
+  refreshOrders: (limit?: number) => Promise<void>;
   deleteCourse: (id: number) => Promise<boolean>;
   uploadCourseImage: (file: File) => Promise<string | null>;
   cartItems: CartItem[];
@@ -179,6 +214,10 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [wishlistIds, setWishlistIds] = useState<number[]>([]);
   const [coupon, setCoupon] = useState<string | null>(null);
   const [paths, setPaths] = useState<UiPath[]>([]);
+    const [enrollments, setEnrollments] = useState<UiEnrollment[]>([]);
+  const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
+  const [orders, setOrders] = useState<UiOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [pathsLoading, setPathsLoading] = useState(true);
 
   const toast = useCallback((message: string, tone: Toast["tone"] = "success") => {
@@ -206,6 +245,37 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       // swallow — loading state handled by caller
     }
   }, []);
+    const refreshEnrollments = useCallback(async () => {
+    if (!account) { setEnrollments([]); return; }
+    setEnrollmentsLoading(true);
+    try {
+      const res = await api.listMyEnrollments();
+      setEnrollments(res.enrollments);
+    } catch { setEnrollments([]); }
+    finally { setEnrollmentsLoading(false); }
+  }, [account]);
+
+  const updateEnrollmentProgress = useCallback(async (courseId: number, patch: { progress?: number; lastLesson?: string }) => {
+    try {
+      await api.updateEnrollmentProgress(courseId, patch);
+      await refreshEnrollments();
+      toast("Progress saved");
+      return true;
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Update failed", "error");
+      return false;
+    }
+  }, [refreshEnrollments, toast]);
+
+  const refreshOrders = useCallback(async (limit?: number) => {
+    if (!account) { setOrders([]); return; }
+    setOrdersLoading(true);
+    try {
+      const res = await api.listMyOrders(limit);
+      setOrders(res.orders);
+    } catch { setOrders([]); }
+    finally { setOrdersLoading(false); }
+  }, [account]);
 
   const createPath = useCallback(async (body: any) => {
     try {
@@ -313,6 +383,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { refreshCart(); }, [refreshCart]);
   useEffect(() => { refreshWishlist(); }, [refreshWishlist]);
+    useEffect(() => { refreshEnrollments(); }, [refreshEnrollments]);
+  useEffect(() => { refreshOrders(); }, [refreshOrders]);
 
   useEffect(() => {
     const onHash = () => { setRoute(parseRoute()); window.scrollTo({ top: 0, behavior: "auto" }); };
@@ -446,7 +518,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     cartItems, cartLoading, cartOpen, setCartOpen, addToCart, removeFromCart, refreshCart,
     wishlistIds, toggleWishlist, inWishlist,
     coupon, couponPercent, applyCoupon, removeCoupon,
-    paths, pathsLoading, refreshPaths, createPath, updatePath, deletePath,
+    paths, pathsLoading, refreshPaths, createPath, updatePath, deletePath,    enrollments, enrollmentsLoading, refreshEnrollments, updateEnrollmentProgress,
+    orders, ordersLoading, refreshOrders,
   }), [
     route, navigate, toasts, toast, dismissToast, searchTerm,
     account, signIn, signUp, signOut, authLoading, authOpen, authMode, authRole, openAuth, careerOpen,

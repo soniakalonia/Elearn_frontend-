@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
-import { absoluteUploadUrl, api, type BackendUserRow } from "@/lib/api";
+import { absoluteUploadUrl, api, type AdminStats, type BackendUserRow } from "@/lib/api";
 import { formatINR } from "@/lib/data";
 import { cn } from "@/utils/cn";
 import { useShop, type UiCategory, type UiCourse, type UiPath } from "@/lib/store";
@@ -352,7 +352,42 @@ function PathModal({
     </div>
   );
 }
+/* Simple revenue bar chart */
+function RevenueChart({ data }: { data: { date: string; amount: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.amount));
+  return (
+    <div className="mt-3 flex h-24 items-end gap-1.5">
+      {data.map((d) => (
+        <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
+          <div
+            className="w-full rounded-sm bg-lime-deep"
+            style={{ height: `${Math.max(3, (d.amount / max) * 80)}px` }}
+            title={`₹${d.amount.toLocaleString("en-IN")}`}
+          />
+          <span className="text-[0.5rem] text-muted">{new Date(d.date).toLocaleDateString("en-IN", { weekday: "short" }).slice(0, 1)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
+/* Simple signups bar chart */
+function SignupChart({ data }: { data: { date: string; count: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.count));
+  return (
+    <div className="mt-3 flex h-24 items-end gap-0.5">
+      {data.map((d) => (
+        <div key={d.date} className="flex flex-1 flex-col items-center justify-end">
+          <div
+            className="w-full rounded-sm bg-plum/70"
+            style={{ height: `${Math.max(2, (d.count / max) * 80)}px` }}
+            title={`${d.count} signups`}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ---------- Main Admin page ----------
 export default function Admin() {
@@ -388,7 +423,19 @@ export default function Admin() {
   // users UI
   const [users, setUsers] = useState<BackendUserRow[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
+  const [adminStatsLoading, setAdminStatsLoading] = useState(false);
+  const [adminStatsError, setAdminStatsError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (tab !== "overview") return;
+    setAdminStatsLoading(true);
+    setAdminStatsError(null);
+    api.getAdminStats()
+      .then((s) => setAdminStats(s))
+      .catch((err) => setAdminStatsError(err instanceof Error ? err.message : "Failed to load stats"))
+      .finally(() => setAdminStatsLoading(false));
+  }, [tab]);
   useEffect(() => {
     if (tab === "users") {
       setUsersLoading(true);
@@ -457,20 +504,153 @@ export default function Admin() {
           <h1 className="display text-[clamp(1.6rem,3vw,2.2rem)]">{adminNav.find((n) => n.id === tab)?.label}</h1>
 
           {/* OVERVIEW */}
-          {tab === "overview" && (
-            <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
-              {[
-                { label: "Categories", value: categories.length, icon: "grid" },
-                { label: "Courses", value: courses.length, icon: "book" },
-                { label: "Users", value: users.length || "See Users tab", icon: "users" },
-              ].map((stat) => (
-                <div key={stat.label} className="card p-3.5">
-                  <p className="text-[0.6rem] font-semibold uppercase text-muted">{stat.label}</p>
-                  <p className="mt-2 font-display text-[1.55rem] font-semibold leading-none">{stat.value}</p>
-                </div>
-              ))}
+{tab === "overview" && (
+  <div className="mt-5 space-y-4">
+    {adminStatsLoading && !adminStats ? (
+      <div className="card p-6 text-center text-[0.78rem] text-muted">Loading dashboard…</div>
+    ) : adminStatsError ? (
+      <div className="card p-6 text-center text-[0.78rem] text-coral">{adminStatsError}</div>
+    ) : adminStats ? (
+      <>
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          {[
+            {
+              label: "Revenue",
+              value: `₹${adminStats.totals.revenue.toLocaleString("en-IN")}`,
+              sub: `${adminStats.totals.paidOrders} paid orders`,
+              icon: "receipt",
+              tint: "#CDF56A",
+            },
+            {
+              label: "Active learners",
+              value: String(adminStats.totals.activeLearners),
+              sub: "active accounts",
+              icon: "users",
+              tint: "#A9DDF5",
+            },
+            {
+              label: "Live courses",
+              value: String(adminStats.totals.liveCourses),
+              sub: `${adminStats.totals.totalCourses} total`,
+              icon: "book",
+              tint: "#D9C8FF",
+            },
+            {
+              label: "Enrollments",
+              value: String(adminStats.totals.totalEnrollments),
+              sub: "all time",
+              icon: "graduation",
+              tint: "#FFD3C7",
+            },
+          ].map((stat) => (
+            <div key={stat.label} className="card p-3.5">
+              <div className="flex items-start justify-between">
+                <p className="text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-muted">{stat.label}</p>
+                <span className="grid h-7 w-7 place-items-center rounded-lg" style={{ background: stat.tint }}>
+                  <Icon name={stat.icon} size={13} />
+                </span>
+              </div>
+              <p className="mt-2 font-display text-[1.5rem] font-semibold leading-none">{stat.value}</p>
+              <p className="mt-1.5 text-[0.62rem] text-muted">{stat.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Charts row */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Revenue last 7 days */}
+          <div className="card p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-[0.95rem] font-semibold">Revenue — last 7 days</h2>
+              <span className="text-[0.62rem] text-muted">
+                ₹{adminStats.revenueLast7Days.reduce((s, d) => s + d.amount, 0).toLocaleString("en-IN")}
+              </span>
+            </div>
+            <RevenueChart data={adminStats.revenueLast7Days} />
+          </div>
+
+          {/* Signups last 30 days */}
+          <div className="card p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-[0.95rem] font-semibold">New signups — last 30 days</h2>
+              <span className="text-[0.62rem] text-muted">
+                {adminStats.signupsLast30Days.reduce((s, d) => s + d.count, 0)} total
+              </span>
+            </div>
+            <SignupChart data={adminStats.signupsLast30Days} />
+          </div>
+        </div>
+
+        {/* Top courses */}
+        <div className="card p-4">
+          <h2 className="font-display text-[0.95rem] font-semibold">Top 5 courses by enrollments</h2>
+          {adminStats.topCourses.length === 0 ? (
+            <p className="mt-3 text-[0.74rem] text-muted">No courses yet.</p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {adminStats.topCourses.map((c) => {
+                const max = Math.max(1, ...adminStats.topCourses.map((x) => x.enrollments));
+                return (
+                  <div key={c.id}>
+                    <div className="flex justify-between text-[0.66rem]">
+                      <span className="truncate text-ink-soft">{c.title}</span>
+                      <span className="shrink-0 text-muted">{c.enrollments}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-cream-deep">
+                      <div className="h-full rounded-full bg-lime-deep" style={{ width: `${(c.enrollments / max) * 100}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
+        </div>
+
+        {/* Recent enrollments */}
+        <div className="card overflow-hidden">
+          <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
+            <h2 className="font-display text-[0.95rem] font-semibold">Recent enrollments</h2>
+            <button
+              type="button"
+              onClick={() => setTab("users")}
+              className="text-[0.64rem] font-medium text-muted hover:text-ink"
+            >
+              See users <Icon name="arrowRight" size={11} />
+            </button>
+          </div>
+          {adminStats.recentEnrollments.length === 0 ? (
+            <p className="px-4 py-6 text-center text-[0.74rem] text-muted">No enrollments yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] text-left">
+                <thead className="bg-cream/60">
+                  <tr>
+                    {["Name", "Email", "Course", "Date"].map((h) => (
+                      <th key={h} className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-muted">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line-soft">
+                  {adminStats.recentEnrollments.map((e, i) => (
+                    <tr key={i}>
+                      <td className="px-4 py-2.5 text-[0.72rem] font-medium">{e.userName}</td>
+                      <td className="px-4 py-2.5 text-[0.7rem] text-muted">{e.userEmail}</td>
+                      <td className="px-4 py-2.5 text-[0.7rem]">{e.courseTitle}</td>
+                      <td className="px-4 py-2.5 text-[0.66rem] text-muted">
+                        {new Date(e.createdAt).toLocaleDateString("en-IN")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </>
+    ) : null}
+  </div>
+)}
 
           {/* USERS */}
           {tab === "users" && (
