@@ -226,14 +226,6 @@ export default function Header() {
                         <a href={account.role === "admin" ? "#/admin" : "#/dashboard"} onClick={() => setAccountOpen(false)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[0.74rem] font-medium text-ink-soft hover:bg-cream hover:text-ink">
                           <Icon name="layout" size={14} /> {account.role === "admin" ? "Admin console" : "My dashboard"}
                         </a>
-                        {account.role === "admin" && (
-                          <a href="#/dashboard" onClick={() => setAccountOpen(false)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[0.74rem] font-medium text-ink-soft hover:bg-cream hover:text-ink">
-                            <Icon name="graduation" size={14} /> Learner view
-                          </a>
-                        )}
-                        <a href="#/courses" onClick={() => setAccountOpen(false)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[0.74rem] font-medium text-ink-soft hover:bg-cream hover:text-ink">
-                          <Icon name="book" size={14} /> Browse courses
-                        </a>
                         <button type="button" onClick={() => { setAccountOpen(false); signOut(); }} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[0.74rem] font-medium text-coral hover:bg-cream">
                           <Icon name="logout" size={14} /> Sign out
                         </button>

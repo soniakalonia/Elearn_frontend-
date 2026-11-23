@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
-import { absoluteUploadUrl, api, type AdminStats, type BackendUserRow } from "@/lib/api";
+import { absoluteUploadUrl, api, type AdminStats, type BackendUserRow, type AdminOrderRow } from "@/lib/api";
 import { formatINR } from "@/lib/data";
 import { cn } from "@/utils/cn";
 import { useShop, type UiCategory, type UiCourse, type UiPath } from "@/lib/store";
 
-type ATab = "overview" | "users" | "categories" | "courses" | "paths" | "profile";
+type ATab = "overview" | "orders" | "users" | "categories" | "courses" | "paths" | "profile";
 
 const adminNav: { id: ATab; label: string; icon: string }[] = [
   { id: "overview", label: "Dashboard", icon: "layout" },
+  { id: "orders", label: "Orders", icon: "receipt" },
   { id: "users", label: "Users", icon: "users" },
   { id: "categories", label: "Categories", icon: "grid" },
   { id: "courses", label: "Courses", icon: "book" },
@@ -86,7 +87,7 @@ function CategoryModal({
   );
 }
 
-// ---------- Course modal (Includes Objectives Field) ----------
+// ---------- Course modal ----------
 function CourseModal({
   open, mode, initial, categories, onClose, onSave, uploadImage,
 }: {
@@ -352,6 +353,7 @@ function PathModal({
     </div>
   );
 }
+
 /* Simple revenue bar chart */
 function RevenueChart({ data }: { data: { date: string; amount: number }[] }) {
   const max = Math.max(1, ...data.map((d) => d.amount));
@@ -389,7 +391,6 @@ function SignupChart({ data }: { data: { date: string; count: number }[] }) {
   );
 }
 
-// ---------- Main Admin page ----------
 export default function Admin() {
   const {
     account, signOut, navigate, openAuth, toast,
@@ -399,6 +400,14 @@ export default function Admin() {
   } = useShop();
 
   const [tab, setTab] = useState<ATab>("overview");
+  const [dateRange, setDateRange] = useState("7d");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+
+  const [adminOrders, setAdminOrders] = useState<AdminOrderRow[]>([]);
+  const [adminOrdersTotal, setAdminOrdersTotal] = useState(0);
+  const [adminOrdersPage, setAdminOrdersPage] = useState(1);
+  const [adminOrdersLoading, setAdminOrdersLoading] = useState(false);
 
   // category UI
   const [catModal, setCatModal] = useState<null | "new" | "edit">(null);
@@ -423,28 +432,78 @@ export default function Admin() {
   // users UI
   const [users, setUsers] = useState<BackendUserRow[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [usersTotal, setUsersTotal] = useState(0);
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersSearch, setUsersSearch] = useState("");
+  const [usersRole, setUsersRole] = useState<"" | "user" | "admin">("");
+  const USERS_PER_PAGE = 10;
+
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [adminStatsLoading, setAdminStatsLoading] = useState(false);
   const [adminStatsError, setAdminStatsError] = useState<string | null>(null);
 
+  // 1. Fetch Dashboard Stats
   useEffect(() => {
     if (tab !== "overview") return;
     setAdminStatsLoading(true);
     setAdminStatsError(null);
-    api.getAdminStats()
+
+    const query: any = { range: dateRange };
+    if (dateRange === "custom") {
+      query.start = customStart;
+      query.end = customEnd;
+    }
+
+    api.getAdminStats(query)
       .then((s) => setAdminStats(s))
       .catch((err) => setAdminStatsError(err instanceof Error ? err.message : "Failed to load stats"))
       .finally(() => setAdminStatsLoading(false));
-  }, [tab]);
+  }, [tab, dateRange, customStart, customEnd]);
+
+  // 2. Fetch Orders
   useEffect(() => {
-    if (tab === "users") {
-      setUsersLoading(true);
-      api.listUsers({ limit: 100 })
-        .then((res) => setUsers(res.users))
-        .catch((err) => toast(err.message, "error"))
-        .finally(() => setUsersLoading(false));
+    if (tab !== "orders") return;
+    setAdminOrdersLoading(true);
+
+    const query: any = { page: adminOrdersPage, limit: 10, range: dateRange };
+    if (dateRange === "custom") {
+      query.start = customStart;
+      query.end = customEnd;
     }
-  }, [tab, toast]);
+
+    api.getAdminOrders(query)
+      .then((res) => {
+        setAdminOrders(res.orders);
+        setAdminOrdersTotal(res.total);
+      })
+      .catch((err) => toast(err.message, "error"))
+      .finally(() => setAdminOrdersLoading(false));
+  }, [tab, adminOrdersPage, dateRange, customStart, customEnd, toast]);
+
+  // 3. Fetch Users  ✅ NEW
+  useEffect(() => {
+    if (tab !== "users") return;
+    if (!account || account.role !== "admin") return;
+
+    setUsersLoading(true);
+
+    const query: any = { page: usersPage, limit: USERS_PER_PAGE };
+    if (usersSearch.trim()) query.search = usersSearch.trim();
+    if (usersRole) query.role = usersRole;
+
+    api.listUsers(query)
+      .then((res) => {
+        setUsers(res.users);
+        setUsersTotal(res.total);
+      })
+      .catch((err) => toast(err instanceof Error ? err.message : "Failed to load users", "error"))
+      .finally(() => setUsersLoading(false));
+  }, [tab, usersPage, usersSearch, usersRole, account, toast]);
+
+  // Reset to page 1 when filters change  ✅ NEW
+  useEffect(() => {
+    setUsersPage(1);
+  }, [usersSearch, usersRole]);
 
   if (!account || account.role !== "admin") {
     return (
@@ -467,6 +526,31 @@ export default function Admin() {
       toast(err instanceof Error ? err.message : "Update failed", "error");
     }
   };
+
+  // Helper for Date Filter UI
+  const DateFilter = () => (
+    <div className="flex flex-wrap items-center gap-2 bg-paper p-2 rounded-xl border border-line mb-4">
+      {["today", "7d", "1m", "custom"].map((r) => (
+        <button
+          key={r}
+          onClick={() => setDateRange(r)}
+          className={cn(
+            "px-3 py-1.5 text-[0.7rem] font-medium rounded-lg transition-colors",
+            dateRange === r ? "bg-ink text-white" : "text-muted hover:bg-cream"
+          )}
+        >
+          {r === "today" ? "Today" : r === "7d" ? "Last 7 Days" : r === "1m" ? "Last 30 Days" : "Custom"}
+        </button>
+      ))}
+      {dateRange === "custom" && (
+        <div className="flex items-center gap-2 ml-auto">
+          <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="input h-8 text-[0.7rem] py-1" />
+          <span className="text-[0.7rem] text-muted">to</span>
+          <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="input h-8 text-[0.7rem] py-1" />
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="wrap py-6 md:py-8">
@@ -504,160 +588,230 @@ export default function Admin() {
           <h1 className="display text-[clamp(1.6rem,3vw,2.2rem)]">{adminNav.find((n) => n.id === tab)?.label}</h1>
 
           {/* OVERVIEW */}
-{tab === "overview" && (
-  <div className="mt-5 space-y-4">
-    {adminStatsLoading && !adminStats ? (
-      <div className="card p-6 text-center text-[0.78rem] text-muted">Loading dashboard…</div>
-    ) : adminStatsError ? (
-      <div className="card p-6 text-center text-[0.78rem] text-coral">{adminStatsError}</div>
-    ) : adminStats ? (
-      <>
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          {[
-            {
-              label: "Revenue",
-              value: `₹${adminStats.totals.revenue.toLocaleString("en-IN")}`,
-              sub: `${adminStats.totals.paidOrders} paid orders`,
-              icon: "receipt",
-              tint: "#CDF56A",
-            },
-            {
-              label: "Active learners",
-              value: String(adminStats.totals.activeLearners),
-              sub: "active accounts",
-              icon: "users",
-              tint: "#A9DDF5",
-            },
-            {
-              label: "Live courses",
-              value: String(adminStats.totals.liveCourses),
-              sub: `${adminStats.totals.totalCourses} total`,
-              icon: "book",
-              tint: "#D9C8FF",
-            },
-            {
-              label: "Enrollments",
-              value: String(adminStats.totals.totalEnrollments),
-              sub: "all time",
-              icon: "graduation",
-              tint: "#FFD3C7",
-            },
-          ].map((stat) => (
-            <div key={stat.label} className="card p-3.5">
-              <div className="flex items-start justify-between">
-                <p className="text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-muted">{stat.label}</p>
-                <span className="grid h-7 w-7 place-items-center rounded-lg" style={{ background: stat.tint }}>
-                  <Icon name={stat.icon} size={13} />
-                </span>
-              </div>
-              <p className="mt-2 font-display text-[1.5rem] font-semibold leading-none">{stat.value}</p>
-              <p className="mt-1.5 text-[0.62rem] text-muted">{stat.sub}</p>
-            </div>
-          ))}
-        </div>
+          {tab === "overview" && (
+            <div className="mt-5 space-y-4">
+              <DateFilter />
+              {adminStatsLoading && !adminStats ? (
+                <div className="card p-6 text-center text-[0.78rem] text-muted">Loading dashboard…</div>
+              ) : adminStatsError ? (
+                <div className="card p-6 text-center text-[0.78rem] text-coral">{adminStatsError}</div>
+              ) : adminStats ? (
+                <>
+                  {/* Stat cards */}
+                  <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                    {[
+                      {
+                        label: "Revenue",
+                        value: `₹${adminStats.totals.revenue.toLocaleString("en-IN")}`,
+                        sub: `${adminStats.totals.paidOrders} paid orders`,
+                        icon: "receipt",
+                        tint: "#CDF56A",
+                      },
+                      {
+                        label: "Active learners",
+                        value: String(adminStats.totals.activeLearners),
+                        sub: "active accounts",
+                        icon: "users",
+                        tint: "#A9DDF5",
+                      },
+                      {
+                        label: "Live courses",
+                        value: String(adminStats.totals.liveCourses),
+                        sub: `${adminStats.totals.totalCourses} total`,
+                        icon: "book",
+                        tint: "#D9C8FF",
+                      },
+                      {
+                        label: "Enrollments",
+                        value: String(adminStats.totals.totalEnrollments),
+                        sub: "all time",
+                        icon: "graduation",
+                        tint: "#FFD3C7",
+                      },
+                    ].map((stat) => (
+                      <div key={stat.label} className="card p-3.5">
+                        <div className="flex items-start justify-between">
+                          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-muted">{stat.label}</p>
+                          <span className="grid h-7 w-7 place-items-center rounded-lg" style={{ background: stat.tint }}>
+                            <Icon name={stat.icon} size={13} />
+                          </span>
+                        </div>
+                        <p className="mt-2 font-display text-[1.5rem] font-semibold leading-none">{stat.value}</p>
+                        <p className="mt-1.5 text-[0.62rem] text-muted">{stat.sub}</p>
+                      </div>
+                    ))}
+                  </div>
 
-        {/* Charts row */}
-        <div className="grid gap-4 lg:grid-cols-2">
-          {/* Revenue last 7 days */}
-          <div className="card p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-[0.95rem] font-semibold">Revenue — last 7 days</h2>
-              <span className="text-[0.62rem] text-muted">
-                ₹{adminStats.revenueLast7Days.reduce((s, d) => s + d.amount, 0).toLocaleString("en-IN")}
-              </span>
-            </div>
-            <RevenueChart data={adminStats.revenueLast7Days} />
-          </div>
-
-          {/* Signups last 30 days */}
-          <div className="card p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-[0.95rem] font-semibold">New signups — last 30 days</h2>
-              <span className="text-[0.62rem] text-muted">
-                {adminStats.signupsLast30Days.reduce((s, d) => s + d.count, 0)} total
-              </span>
-            </div>
-            <SignupChart data={adminStats.signupsLast30Days} />
-          </div>
-        </div>
-
-        {/* Top courses */}
-        <div className="card p-4">
-          <h2 className="font-display text-[0.95rem] font-semibold">Top 5 courses by enrollments</h2>
-          {adminStats.topCourses.length === 0 ? (
-            <p className="mt-3 text-[0.74rem] text-muted">No courses yet.</p>
-          ) : (
-            <div className="mt-3 space-y-2">
-              {adminStats.topCourses.map((c) => {
-                const max = Math.max(1, ...adminStats.topCourses.map((x) => x.enrollments));
-                return (
-                  <div key={c.id}>
-                    <div className="flex justify-between text-[0.66rem]">
-                      <span className="truncate text-ink-soft">{c.title}</span>
-                      <span className="shrink-0 text-muted">{c.enrollments}</span>
+                  {/* Charts row */}
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="card p-4">
+                      <div className="flex items-center justify-between">
+                        <h2 className="font-display text-[0.95rem] font-semibold">Revenue — last 7 days</h2>
+                        <span className="text-[0.62rem] text-muted">
+                          ₹{adminStats.revenueLast7Days.reduce((s, d) => s + d.amount, 0).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      <RevenueChart data={adminStats.revenueLast7Days} />
                     </div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-cream-deep">
-                      <div className="h-full rounded-full bg-lime-deep" style={{ width: `${(c.enrollments / max) * 100}%` }} />
+
+                    <div className="card p-4">
+                      <div className="flex items-center justify-between">
+                        <h2 className="font-display text-[0.95rem] font-semibold">New signups — last 30 days</h2>
+                        <span className="text-[0.62rem] text-muted">
+                          {adminStats.signupsLast30Days.reduce((s, d) => s + d.count, 0)} total
+                        </span>
+                      </div>
+                      <SignupChart data={adminStats.signupsLast30Days} />
                     </div>
                   </div>
-                );
-              })}
+
+                  {/* Top courses */}
+                  <div className="card p-4">
+                    <h2 className="font-display text-[0.95rem] font-semibold">Top 5 courses by enrollments</h2>
+                    {adminStats.topCourses.length === 0 ? (
+                      <p className="mt-3 text-[0.74rem] text-muted">No courses yet.</p>
+                    ) : (
+                      <div className="mt-3 space-y-2">
+                        {adminStats.topCourses.map((c) => {
+                          const max = Math.max(1, ...adminStats.topCourses.map((x) => x.enrollments));
+                          return (
+                            <div key={c.id}>
+                              <div className="flex justify-between text-[0.66rem]">
+                                <span className="truncate text-ink-soft">{c.title}</span>
+                                <span className="shrink-0 text-muted">{c.enrollments}</span>
+                              </div>
+                              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-cream-deep">
+                                <div className="h-full rounded-full bg-lime-deep" style={{ width: `${(c.enrollments / max) * 100}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Recent enrollments */}
+                  <div className="card overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
+                      <h2 className="font-display text-[0.95rem] font-semibold">Recent enrollments</h2>
+                      <button
+                        type="button"
+                        onClick={() => setTab("users")}
+                        className="text-[0.64rem] font-medium text-muted hover:text-ink"
+                      >
+                        See users <Icon name="arrowRight" size={11} />
+                      </button>
+                    </div>
+                    {adminStats.recentEnrollments.length === 0 ? (
+                      <p className="px-4 py-6 text-center text-[0.74rem] text-muted">No enrollments yet.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[560px] text-left">
+                          <thead className="bg-cream/60">
+                            <tr>
+                              {["Name", "Email", "Course", "Date"].map((h) => (
+                                <th key={h} className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-muted">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line-soft">
+                            {adminStats.recentEnrollments.map((e, i) => (
+                              <tr key={i}>
+                                <td className="px-4 py-2.5 text-[0.72rem] font-medium">{e.userName}</td>
+                                <td className="px-4 py-2.5 text-[0.7rem] text-muted">{e.userEmail}</td>
+                                <td className="px-4 py-2.5 text-[0.7rem]">{e.courseTitle}</td>
+                                <td className="px-4 py-2.5 text-[0.66rem] text-muted">
+                                  {new Date(e.createdAt).toLocaleDateString("en-IN")}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : null}
             </div>
           )}
-        </div>
 
-        {/* Recent enrollments */}
-        <div className="card overflow-hidden">
-          <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
-            <h2 className="font-display text-[0.95rem] font-semibold">Recent enrollments</h2>
-            <button
-              type="button"
-              onClick={() => setTab("users")}
-              className="text-[0.64rem] font-medium text-muted hover:text-ink"
-            >
-              See users <Icon name="arrowRight" size={11} />
-            </button>
-          </div>
-          {adminStats.recentEnrollments.length === 0 ? (
-            <p className="px-4 py-6 text-center text-[0.74rem] text-muted">No enrollments yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-left">
-                <thead className="bg-cream/60">
-                  <tr>
-                    {["Name", "Email", "Course", "Date"].map((h) => (
-                      <th key={h} className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-muted">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line-soft">
-                  {adminStats.recentEnrollments.map((e, i) => (
-                    <tr key={i}>
-                      <td className="px-4 py-2.5 text-[0.72rem] font-medium">{e.userName}</td>
-                      <td className="px-4 py-2.5 text-[0.7rem] text-muted">{e.userEmail}</td>
-                      <td className="px-4 py-2.5 text-[0.7rem]">{e.courseTitle}</td>
-                      <td className="px-4 py-2.5 text-[0.66rem] text-muted">
-                        {new Date(e.createdAt).toLocaleDateString("en-IN")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* ORDERS */}
+          {tab === "orders" && (
+            <div className="mt-5">
+              <DateFilter />
+              <div className="overflow-hidden rounded-2xl border border-line bg-paper">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[700px] text-left">
+                    <thead className="bg-cream/60">
+                      <tr>
+                        {["User", "Course", "Total", "Method", "Date"].map((h) => (
+                          <th key={h} className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-muted">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line-soft">
+                      {adminOrdersLoading ? (
+                        <tr><td colSpan={5} className="px-4 py-8 text-center text-muted">Loading orders…</td></tr>
+                      ) : adminOrders.length === 0 ? (
+                        <tr><td colSpan={5} className="px-4 py-8 text-center text-muted">No orders found for this period.</td></tr>
+                      ) : adminOrders.map((o) => (
+                        <tr key={o.id}>
+                          <td className="px-4 py-3 text-[0.74rem] font-medium">{o.user_name}</td>
+                          <td className="px-4 py-3 text-[0.72rem] text-muted">{o.course_title || "Multiple items"}</td>
+                          <td className="px-4 py-3 text-[0.72rem] font-semibold">{formatINR(o.total)}</td>
+                          <td className="px-4 py-3 text-[0.68rem] text-muted capitalize">{o.payment_method || "—"}</td>
+                          <td className="px-4 py-3 text-[0.68rem] text-muted">
+                            {new Date(o.created_at).toLocaleDateString("en-IN")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {adminOrdersTotal > 10 && (
+                  <div className="flex items-center justify-between border-t border-line px-4 py-3">
+                    <p className="text-[0.68rem] text-muted">
+                      Showing {(adminOrdersPage - 1) * 10 + 1}–{Math.min(adminOrdersPage * 10, adminOrdersTotal)} of {adminOrdersTotal}
+                    </p>
+                    <div className="flex gap-1.5">
+                      <button type="button" onClick={() => setAdminOrdersPage(p => Math.max(1, p - 1))} disabled={adminOrdersPage === 1} className="btn btn-sm btn-outline disabled:opacity-40">Prev</button>
+                      <button type="button" onClick={() => setAdminOrdersPage(p => p + 1)} disabled={adminOrdersPage * 10 >= adminOrdersTotal} className="btn btn-sm btn-outline disabled:opacity-40">Next</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </div>
-      </>
-    ) : null}
-  </div>
-)}
 
-          {/* USERS */}
+          {/* USERS ✅ UPDATED */}
           {tab === "users" && (
             <div className="mt-5 overflow-hidden rounded-2xl border border-line bg-paper">
-              <div className="border-b border-line px-4 py-3">
-                <h2 className="font-display text-[0.98rem] font-semibold">All Users</h2>
+              {/* Header with search + role filter */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
+                <h2 className="font-display text-[0.98rem] font-semibold">
+                  All Users {usersTotal > 0 && <span className="text-muted">({usersTotal})</span>}
+                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="search"
+                    value={usersSearch}
+                    onChange={(e) => setUsersSearch(e.target.value)}
+                    placeholder="Search name or email…"
+                    className="input h-8 w-48 text-[0.72rem] py-1"
+                  />
+                  <select
+                    value={usersRole}
+                    onChange={(e) => setUsersRole(e.target.value as "" | "user" | "admin")}
+                    className="select h-8 text-[0.72rem] py-1"
+                  >
+                    <option value="">All roles</option>
+                    <option value="user">Users</option>
+                    <option value="admin">Admins</option>
+                  </select>
+                </div>
               </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[600px] text-left">
                   <thead className="bg-cream/60">
@@ -693,6 +847,34 @@ export default function Admin() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination ✅ NEW */}
+              {usersTotal > USERS_PER_PAGE && (
+                <div className="flex items-center justify-between border-t border-line px-4 py-3">
+                  <p className="text-[0.68rem] text-muted">
+                    Showing {(usersPage - 1) * USERS_PER_PAGE + 1}–
+                    {Math.min(usersPage * USERS_PER_PAGE, usersTotal)} of {usersTotal}
+                  </p>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
+                      disabled={usersPage === 1}
+                      className="btn btn-sm btn-outline disabled:opacity-40"
+                    >
+                      Prev
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUsersPage((p) => p + 1)}
+                      disabled={usersPage * USERS_PER_PAGE >= usersTotal}
+                      className="btn btn-sm btn-outline disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -788,7 +970,6 @@ export default function Admin() {
                 </table>
               </div>
 
-              {/* Pagination */}
               {totalCoursePages > 1 && (
                 <div className="flex items-center justify-between border-t border-line px-4 py-3">
                   <p className="text-[0.68rem] text-muted">

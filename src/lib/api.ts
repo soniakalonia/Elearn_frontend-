@@ -129,6 +129,17 @@ export type AdminStats = {
   topCourses: AdminStatsTopCourse[];
   recentEnrollments: AdminStatsRecentEnrollment[];
 };
+
+export type AdminOrderRow = {
+  id: number;
+  order_code: string;
+  total: number;
+  payment_method: string | null;
+  created_at: string;
+  user_name: string;
+  course_title: string;
+};
+
 export const api = {
   signup: (body: { name: string; email: string; password: string; phone?: string }) =>
     request<{ user: BackendUser; token: string }>("/auth/signup", { method: "POST", body: JSON.stringify(body) }),
@@ -218,7 +229,22 @@ export const api = {
     request<{ order: BackendOrder }>(`/orders/${id}`),
   createOrder: (body: { items: { courseId: number; title: string; price: number }[]; subtotal: number; discount: number; total: number; paymentMethod?: string; paymentRef?: string }) =>
     request<{ order: BackendOrder }>("/orders", { method: "POST", body: JSON.stringify(body) }),
-  getAdminStats: () => request<AdminStats>("/admin/stats"),
+  getAdminStats: (params?: { range?: string; start?: string; end?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.range) q.set("range", params.range);
+    if (params?.start) q.set("start", params.start);
+    if (params?.end) q.set("end", params.end);
+    return request<AdminStats>(`/admin/stats?${q.toString()}`);
+  },
+    getAdminOrders: (params: { page: number; limit: number; range?: string; start?: string; end?: string }) => {
+    const q = new URLSearchParams();
+    q.set("page", String(params.page));
+    q.set("limit", String(params.limit));
+    if (params.range) q.set("range", params.range);
+    if (params.start) q.set("start", params.start);
+    if (params.end) q.set("end", params.end);
+    return request<{ orders: AdminOrderRow[]; total: number; page: number; limit: number }>(`/admin/orders?${q.toString()}`);
+  },
 
   createRazorpayOrder: (body: { name: string; email: string; phone: string; country: string }) =>
     request<{
