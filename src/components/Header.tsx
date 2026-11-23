@@ -6,6 +6,7 @@ import { formatINR } from "@/lib/data";
 import { absoluteUploadUrl } from "@/lib/api";
 import { cn } from "@/utils/cn";
 
+
 function SearchBox({ mobile = false }: { mobile?: boolean }) {
   const { navigate, setSearchTerm, toast, courses } = useShop();
   const [q, setQ] = useState("");
@@ -149,29 +150,30 @@ export default function Header() {
 
   return (
     <header className="relative z-40">
-      <div className="bg-plum text-white">
-        <div className="wrap flex h-9 items-center justify-between gap-4 text-[0.7rem]">
-          <p className="flex min-w-0 items-center gap-2 truncate">
-            <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-lime text-ink">
-              <Icon name="sparkle" size={10} strokeWidth={2} />
-            </span>
-            <span className="truncate">
-              New year, new skills — <span className="font-semibold text-lime">start free</span> today
-            </span>
-          </p>
-          <div className="hidden shrink-0 items-center gap-5 text-white/70 md:flex">
-            <a href="#/contact" className="transition-colors hover:text-lime">For teams</a>
-            <span className="h-3 w-px bg-white/20" />
-            <span className="flex items-center gap-1.5"><Icon name="shieldCheck" size={11} className="text-lime" /> 7-day money-back</span>
-          </div>
-        </div>
-      </div>
+<div className="bg-plum text-white">
+  <div className="wrap flex h-9 items-center justify-between gap-4 text-[0.7rem]">
+    <p className="flex min-w-0 items-center gap-2 truncate">
+      <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-lime text-ink">
+        <Icon name="sparkle" size={10} strokeWidth={2} />
+      </span>
+      <span className="truncate">
+        Practitioner-led courses built around real job roles ·{" "}
+        <span className="font-semibold text-lime">start learning today</span>
+      </span>
+    </p>
+    <div className="hidden shrink-0 items-center gap-5 text-white/70 md:flex">
+      <a href="#/courses" className="transition-colors hover:text-lime">Browse courses</a>
+      <span className="h-3 w-px bg-white/20" />
+      <a href="#/contact" className="transition-colors hover:text-lime">Contact us</a>
+    </div>
+  </div>
+</div>
 
       <div className="sticky top-0 z-40">
         <div className="border-b border-line bg-paper/95 backdrop-blur-md">
           <div className="wrap flex h-[66px] items-center gap-4">
             <a href="#/home" aria-label="Elearn Hub home" className="shrink-0 transition-opacity hover:opacity-80">
-              <Logo />
+             <Logo compact />
             </a>
 
             <div className="ml-2 hidden flex-1 justify-center lg:flex">

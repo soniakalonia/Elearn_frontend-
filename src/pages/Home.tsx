@@ -4,23 +4,21 @@ import { useShop } from "@/lib/store";
 import { absoluteUploadUrl } from "@/lib/api";
 import {
   Accordion,
-  Avatar,
+  // Avatar,
   CourseCard,
   Reveal,
   SectionHead,
-  Stars,
-  useCountdown,
+  // Stars,
 } from "@/components/Primitives";
 import {
   faqs,
-  reviews,
-  stats,
+  // reviews,
   tools,
 } from "@/lib/data";
 import { cn } from "@/utils/cn";
 
 function Hero() {
-  const { navigate, setSearchTerm, categories } = useShop();
+  const { navigate, setSearchTerm, categories, paths, courses } = useShop();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
 
@@ -35,7 +33,7 @@ function Hero() {
     }
   };
 
-  const quick = ["DevOps", "AutoCAD", "Data science", "UI/UX", "AI"];
+  const quick = ["DevOps", "Full Stack", "DBMS", "Backend Development", "AI"];
 
   return (
     <section className="relative overflow-hidden bg-cream">
@@ -49,7 +47,7 @@ function Hero() {
               <span className="rounded-full bg-lime px-2 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-ink">
                 New
               </span>
-              <span className="text-[0.7rem] font-medium text-ink-soft">AI mentor + career roadmaps, included</span>
+              <span className="text-[0.7rem] font-medium text-ink-soft">Courses + career roadmaps, included</span>
               <Icon name="arrowUpRight" size={12} className="text-muted" />
             </div>
           </Reveal>
@@ -68,8 +66,7 @@ function Hero() {
 
           <Reveal delay={130}>
             <p className="mt-5 max-w-[32rem] text-[0.98rem] leading-relaxed text-muted">
-              Practitioner-led courses in DevOps, design, data and AI — with an AI mentor that plans your path, reviews
-              your work and gets you interview-ready.
+              Practitioner-led courses across in-demand skills — with curated career roadmaps that map every skill to a real job role, so you always know what to learn next.
             </p>
           </Reveal>
 
@@ -129,14 +126,15 @@ function Hero() {
             </div>
           </Reveal>
 
-<Reveal delay={270}>
-  <p className="mt-7 flex items-center gap-1.5 text-[0.7rem] text-ink-soft">
-    <Icon name="shieldCheck" size={14} className="text-plum" /> 7-day money-back guarantee
-  </p>
-</Reveal>
+          <Reveal delay={270}>
+            <p className="mt-7 flex items-center gap-1.5 text-[0.7rem] text-ink-soft">
+              <Icon name="shieldCheck" size={14} className="text-plum" /> Skills mapped to real job roles
+            </p>
+          </Reveal>
 
         </div>
 
+        {/* visual */}
         {/* visual */}
         <div className="relative mx-auto w-full max-w-[480px] lg:max-w-none">
           <div className="absolute -inset-3 rotate-2 rounded-[2rem] border border-ink/10 bg-lime/50" />
@@ -147,70 +145,38 @@ function Hero() {
               className="h-[420px] w-full object-cover object-center sm:h-[480px] lg:h-[520px]"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/45 via-ink/0 to-transparent" />
-            <div className="absolute inset-x-4 bottom-4 flex items-center justify-between gap-3 rounded-2xl border border-white/30 bg-paper/95 p-3 backdrop-blur">
-              <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-lime text-ink">
-                  <Icon name="video" size={17} />
-                </span>
-                <div>
-                  <p className="text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-coral">Resume learning</p>
-                  <p className="text-[0.78rem] font-semibold leading-tight text-ink">Docker & CI/CD pipelines</p>
-                  <div className="mt-1.5 h-1.5 w-36 overflow-hidden rounded-full bg-cream-deep">
-                    <span className="block h-full w-[68%] rounded-full bg-ink" />
-                  </div>
-                </div>
-              </div>
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-white">
-                <Icon name="play" size={13} />
-              </span>
-            </div>
           </div>
 
+          {/* Career paths floating card */}
           <div className="animate-float absolute -left-3 top-7 w-[192px] rounded-2xl border border-line bg-paper p-3.5 shadow-[0_25px_50px_-25px_rgba(26,18,37,0.5)] sm:-left-8 sm:w-[214px]">
             <div className="flex items-center gap-2">
               <span className="grid h-7 w-7 place-items-center rounded-full bg-plum text-lime">
-                <Icon name="sparkle" size={14} />
+                <Icon name="route" size={14} />
               </span>
               <div>
-                <p className="text-[0.62rem] font-semibold text-ink">Your AI mentor</p>
+                <p className="text-[0.62rem] font-semibold text-ink">Career paths</p>
                 <p className="flex items-center gap-1 text-[0.54rem] text-muted">
-                  <span className="h-1 w-1 rounded-full bg-emerald-500" /> Online now
+                  <span className="h-1 w-1 rounded-full bg-emerald-500" /> {paths.length} live
                 </p>
               </div>
             </div>
             <p className="mt-2.5 text-[0.7rem] font-medium leading-snug text-ink-soft">
-              Your 6-month DevOps roadmap is ready.
+              Career roadmaps included — week-by-week, goal-driven.
             </p>
             <button
               type="button"
-              onClick={() => navigate("dashboard")}
+              onClick={() => navigate("paths")}
               className="mt-2 flex items-center gap-1 text-[0.62rem] font-semibold text-plum hover:underline"
             >
               Review my plan <Icon name="arrowRight" size={11} />
             </button>
           </div>
 
-          <div className="animate-float-slow absolute -right-2 bottom-24 w-[176px] rounded-2xl border border-line bg-paper p-3.5 shadow-[0_25px_50px_-25px_rgba(26,18,37,0.5)] sm:-right-5 sm:w-[196px]">
-            <div className="flex items-center justify-between">
-              <p className="text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-muted">This week</p>
-              <Icon name="flame" size={13} className="text-coral" />
-            </div>
-            <div className="mt-1 flex items-end justify-between">
-              <p className="font-display text-2xl font-semibold leading-none text-ink">4 / 5</p>
-              <span className="text-[0.58rem] font-medium text-muted">goal</span>
-            </div>
-            <div className="mt-2 flex gap-1">
-              {[1, 2, 3, 4, 5].map((d) => (
-                <span key={d} className={cn("h-1.5 flex-1 rounded-full", d <= 4 ? "bg-lime-deep" : "bg-cream-deep")} />
-              ))}
-            </div>
-            <p className="mt-2 text-[0.6rem] text-muted">12-day streak · keep it going</p>
-          </div>
-
+          {/* Course count badge (top-right) */}
           <div className="absolute -right-2 -top-4 grid h-[74px] w-[74px] -rotate-12 place-items-center rounded-full bg-lime text-center shadow-lg sm:-right-4 sm:h-[86px] sm:w-[86px]">
             <div>
-              <p className="font-display text-lg font-bold leading-none text-ink">25%</p>
-              <p className="mt-0.5 text-[0.5rem] font-bold uppercase tracking-[0.1em] text-ink/70">off annual</p>
+              <p className="font-display text-lg font-bold leading-none text-ink">{courses.length || "—"}</p>
+              <p className="mt-0.5 text-[0.5rem] font-bold uppercase tracking-[0.1em] text-ink/70">courses</p>
             </div>
           </div>
         </div>
@@ -218,13 +184,7 @@ function Hero() {
 
       <div className="relative hidden border-t border-line/70 bg-cream-deep/40 lg:block">
         <div className="wrap flex items-center justify-between gap-4 py-2.5 text-[0.68rem] text-muted">
-          <p className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-600" />
-            <span className="font-medium text-ink-soft">Live workshop in 3 hours:</span> Kubernetes debugging, with Meghna Rao
-          </p>
-          <button type="button" onClick={() => navigate("dashboard")} className="flex items-center gap-1 font-semibold text-ink transition-colors hover:text-coral">
-            Save my seat <Icon name="arrowRight" size={12} />
-          </button>
+  
         </div>
       </div>
     </section>
@@ -271,40 +231,40 @@ function Categories() {
             : categories.length === 0
               ? <p className="col-span-full text-center text-muted">No categories yet — add one from the Admin console.</p>
               : categories.map((cat, i) => {
-                  // Find the first course in this category that actually has an image
-                  const courseWithImage = courses.find((c) => c.categoryId === cat.id && c.imageUrl);
-                  const imageUrl = courseWithImage ? absoluteUploadUrl(courseWithImage.imageUrl) : null;
+                // Find the first course in this category that actually has an image
+                const courseWithImage = courses.find((c) => c.categoryId === cat.id && c.imageUrl);
+                const imageUrl = courseWithImage ? absoluteUploadUrl(courseWithImage.imageUrl) : null;
 
-                  return (
-                    <Reveal key={cat.id} delay={i * 45}>
-                      <a href={`#/courses?category=${cat.id}`} className="group card card-hover flex h-full flex-col overflow-hidden p-0">
-                        {/* Image Section */}
-                        <div className="relative h-28 w-full bg-cream-deep overflow-hidden">
-                          {imageUrl ? (
-                            <img 
-                              src={imageUrl} 
-                              alt={cat.name} 
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                            />
-                          ) : (
-                            <div className="grid h-full w-full place-items-center bg-lime/20 text-ink/40">
-                               <Icon name="grid" size={24} />
-                            </div>
-                          )}
-                          <span className="absolute right-2 top-2 rounded-full bg-paper/90 backdrop-blur px-2 py-0.5 text-[0.6rem] font-medium text-ink shadow-sm">
-                            {cat.count} courses
-                          </span>
-                        </div>
-                        
-                        {/* Content Section */}
-                        <div className="flex flex-1 flex-col p-4">
-                          <h3 className="font-display text-[0.98rem] font-semibold group-hover:text-plum transition-colors">{cat.name}</h3>
-                          <p className="mt-1 line-clamp-2 text-[0.72rem] text-muted">{cat.shortHeading || cat.description}</p>
-                        </div>
-                      </a>
-                    </Reveal>
-                  );
-                })}
+                return (
+                  <Reveal key={cat.id} delay={i * 45}>
+                    <a href={`#/courses?category=${cat.id}`} className="group card card-hover flex h-full flex-col overflow-hidden p-0">
+                      {/* Image Section */}
+                      <div className="relative h-28 w-full bg-cream-deep overflow-hidden">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={cat.name}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="grid h-full w-full place-items-center bg-lime/20 text-ink/40">
+                            <Icon name="grid" size={24} />
+                          </div>
+                        )}
+                        <span className="absolute right-2 top-2 rounded-full bg-paper/90 backdrop-blur px-2 py-0.5 text-[0.6rem] font-medium text-ink shadow-sm">
+                          {cat.count} courses
+                        </span>
+                      </div>
+
+                      {/* Content Section */}
+                      <div className="flex flex-1 flex-col p-4">
+                        <h3 className="font-display text-[0.98rem] font-semibold group-hover:text-plum transition-colors">{cat.name}</h3>
+                        <p className="mt-1 line-clamp-2 text-[0.72rem] text-muted">{cat.shortHeading || cat.description}</p>
+                      </div>
+                    </a>
+                  </Reveal>
+                );
+              })}
         </div>
       </div>
     </section>
@@ -396,8 +356,9 @@ function CareerTracks() {
     </section>
   );
 }
-function MentorTeaser() {
-  const { navigate } = useShop();
+function CareerPathsHighlight() {
+  const { paths, navigate } = useShop();
+
   return (
     <section className="relative overflow-hidden bg-plum py-14 text-white md:py-20">
       <div className="noise pointer-events-none absolute inset-0 opacity-60" />
@@ -407,24 +368,23 @@ function MentorTeaser() {
         <div>
           <Reveal>
             <p className="eyebrow mb-3 text-lime">
-              <span className="h-1.5 w-1.5 rounded-full bg-lime" /> AI career mentor
+              <span className="h-1.5 w-1.5 rounded-full bg-lime" /> Career paths
             </p>
             <h2 className="display max-w-xl text-[clamp(2.1rem,4vw,3.4rem)] text-white">
-              A mentor who knows where you're <span className="italic-accent text-lime">going.</span>
+              A route, not just <span className="italic-accent text-lime">a reading list.</span>
             </h2>
             <p className="mt-4 max-w-lg text-[0.92rem] leading-relaxed text-white/60">
-              Tell it your role, your target and your available hours. It builds the roadmap, checks your projects and
-              rehearses the interview — then adjusts as life happens.
+              Curated, week-by-week paths built from real job descriptions — sequenced courses, milestone projects and the skills hiring managers actually screen for.
             </p>
           </Reveal>
 
           <Reveal delay={80}>
             <ul className="mt-7 grid max-w-lg gap-3 sm:grid-cols-2">
               {[
-                { icon: "route", title: "Your personal roadmap", copy: "Week-by-week, adjusted to your goal" },
-                { icon: "code", title: "Project feedback", copy: "Specific notes, not vague praise" },
-                { icon: "target", title: "Interview prep", copy: "Role-specific questions and drills" },
-                { icon: "file", title: "Portfolio review", copy: "Make your work easy to say yes to" },
+                { icon: "route", title: "Structured milestones", copy: "Week-by-week, goal-driven" },
+                { icon: "code", title: "Real projects", copy: "Portfolio-grade, not toys" },
+                { icon: "target", title: "Curated courses", copy: "Hand-picked per stage" },
+                { icon: "chart", title: "Progress tracking", copy: "See what's next in your dashboard" },
               ].map((item) => (
                 <li key={item.title} className="flex items-start gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] p-3">
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-lime/15 text-lime">
@@ -441,11 +401,11 @@ function MentorTeaser() {
 
           <Reveal delay={140}>
             <div className="mt-7 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={() => navigate("dashboard")} className="btn btn-lime">
-                Meet your mentor <Icon name="arrowRight" size={15} />
+              <button type="button" onClick={() => navigate("paths")} className="btn btn-lime">
+                See career paths <Icon name="arrowRight" size={15} />
               </button>
               <span className="flex items-center gap-1.5 text-[0.68rem] text-white/40">
-                <Icon name="shieldCheck" size={13} /> Free for all Pro learners
+                <Icon name="shieldCheck" size={13} /> {paths.length} paths live
               </span>
             </div>
           </Reveal>
@@ -458,58 +418,41 @@ function MentorTeaser() {
               <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
                 <div className="flex items-center gap-2.5">
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-lime text-ink">
-                    <Icon name="sparkle" size={16} />
+                    <Icon name="route" size={16} />
                   </span>
                   <div>
-                    <p className="text-[0.76rem] font-semibold text-white">Nova · AI mentor</p>
+                    <p className="text-[0.76rem] font-semibold text-white">Pick your track</p>
                     <p className="flex items-center gap-1 text-[0.58rem] text-white/45">
-                      <span className="h-1 w-1 rounded-full bg-lime" /> Thinking about your next move
+                      <span className="h-1 w-1 rounded-full bg-lime" /> {paths.length} available
                     </p>
                   </div>
                 </div>
-                <span className="rounded-full border border-white/10 px-2 py-0.5 text-[0.55rem] uppercase tracking-wider text-white/40">Live demo</span>
               </div>
-              <div className="space-y-3 p-4">
-                <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-white/10 px-3 py-2.5 text-[0.76rem] text-white/85">
-                  I want to become a DevOps engineer in 6 months. I currently do IT support.
-                </div>
-                <div className="max-w-[92%] rounded-2xl rounded-bl-sm border border-white/10 bg-white/[0.06] px-3 py-2.5">
-                  <p className="text-[0.76rem] leading-relaxed text-white/80">
-                    That's a realistic switch. Your support background is an asset — you already understand production
-                    pressure. Here's the short version:
-                  </p>
-                  <div className="mt-2.5 space-y-1.5">
-                    {[
-                      "Months 1–2 · Linux, networking, Git",
-                      "Months 3–4 · Docker, CI/CD, AWS",
-                      "Month 5 · Kubernetes + observability",
-                      "Month 6 · Capstone + interview reps",
-                    ].map((step) => (
-                      <p key={step} className="flex items-center gap-2 text-[0.72rem] text-white/70">
-                        <Icon name="checkCircle" size={12} className="shrink-0 text-lime" /> {step}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5 pl-1">
-                  {["Show me the courses", "Make it 8 hours/week", "Prep me for interviews"].map((chip) => (
-                    <span key={chip} className="rounded-full border border-lime/30 bg-lime/10 px-2.5 py-1 text-[0.62rem] text-lime">
-                      {chip}
+              <div className="space-y-2 p-4">
+                {paths.slice(0, 3).map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => navigate("paths")}
+                    className="flex w-full items-start gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-left transition-colors hover:border-lime/40 hover:bg-white/[0.07]"
+                  >
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-lime/15 text-lime">
+                      <Icon name="route" size={15} />
                     </span>
-                  ))}
-                </div>
-              </div>
-              <div className="border-t border-white/10 p-3">
-                <button
-                  type="button"
-                  onClick={() => navigate("dashboard")}
-                  className="flex w-full items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2.5 text-left text-[0.72rem] text-white/40 transition-colors hover:border-lime/40"
-                >
-                  Ask anything about your career…
-                  <span className="ml-auto grid h-6 w-6 place-items-center rounded-full bg-lime text-ink">
-                    <Icon name="send" size={12} />
-                  </span>
-                </button>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[0.78rem] font-semibold text-white">{p.title}</span>
+                      <span className="mt-0.5 block text-[0.6rem] text-white/45">
+                        {p.duration || "Self-paced"} · {p.level || "All levels"}
+                      </span>
+                    </span>
+                    <Icon name="arrowRight" size={14} className="shrink-0 text-white/40" />
+                  </button>
+                ))}
+                {paths.length === 0 && (
+                  <p className="px-2 py-4 text-center text-[0.72rem] text-white/40">
+                    Career paths are being added — check back soon.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -519,19 +462,8 @@ function MentorTeaser() {
   );
 }
 
-
-function OfferBanner() {
-  const { applyCoupon, toast, navigate } = useShop();
-  const { dd, hh, mm, ss } = useCountdown(47);
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText("ELEARN20");
-      toast("Code ELEARN20 copied. Use it at checkout.");
-    } catch {
-      toast("Your code is ELEARN20 — apply it at checkout.");
-    }
-  };
+function CatalogueTeaser() {
+  const { navigate, courses, coursesLoading } = useShop();
 
   return (
     <section className="section-pad bg-paper pt-0">
@@ -543,54 +475,54 @@ function OfferBanner() {
             <div className="relative grid items-center gap-7 md:grid-cols-[1.15fr_.85fr]">
               <div>
                 <p className="eyebrow text-ink/60">
-                  <Icon name="gift" size={13} /> New learner offer
+                  <Icon name="grid" size={13} /> The full catalogue
                 </p>
                 <h2 className="display mt-2 max-w-lg text-[clamp(1.9rem,3.5vw,2.8rem)] text-ink">
-                  Your first skill, <span className="italic-accent">20% lighter.</span>
+                  Every skill, <span className="italic-accent">one place.</span>
                 </h2>
                 <p className="mt-2 max-w-md text-[0.85rem] leading-relaxed text-ink/65">
-                  Take 20% off any single course — including the career-track capstones. No subscription needed.
+                  DevOps, Data & AI, Cybersecurity, CAD, Product & UX, Web Development — practitioner-led courses with real projects and lifetime access.
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-4">
                   <button
                     type="button"
-                    onClick={() => {
-                      applyCoupon("ELEARN20");
-                      navigate("courses");
-                    }}
+                    onClick={() => navigate("courses")}
                     className="btn btn-primary"
                   >
-                    Claim 20% off <Icon name="arrowRight" size={15} />
+                    Browse all courses <Icon name="arrowRight" size={15} />
                   </button>
                   <div className="flex items-center gap-1.5 text-[0.7rem] text-ink/60">
                     <Icon name="clock" size={13} />
-                    Ends in
-                    <span className="font-mono text-[0.72rem] font-semibold text-ink">
-                      {String(dd).padStart(2, "0")}d {String(hh).padStart(2, "0")}h {String(mm).padStart(2, "0")}m
-                      {dd === 0 ? ` ${String(ss).padStart(2, "0")}s` : ""}
-                    </span>
+                    {coursesLoading ? "Loading…" : `${courses.length} courses live`}
                   </div>
                 </div>
               </div>
 
               <div className="rounded-2xl border-2 border-dashed border-ink/25 bg-paper/80 p-4 md:p-5">
-                <p className="text-center text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-muted">Your coupon code</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="flex flex-1 items-center justify-center rounded-xl border border-ink/15 bg-white py-3">
-                    <span className="font-mono text-[1.2rem] font-bold tracking-[0.14em] text-ink">ELEARN20</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={copy}
-                    aria-label="Copy coupon code"
-                    className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-xl bg-ink text-white transition-colors hover:bg-plum-soft"
-                  >
-                    <Icon name="copy" size={17} />
-                  </button>
-                </div>
-                <p className="mt-2.5 text-center text-[0.62rem] leading-relaxed text-muted">
-                  Valid on individual courses until Sunday. One use per learner.
+                <p className="text-center text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-muted">
+                  Popular tracks
                 </p>
+                <div className="mt-3 space-y-2">
+                  {[
+                    { icon: "cloud", label: "DevOps & Cloud" },
+                    { icon: "sparkle", label: "Data & AI" },
+                    { icon: "shield", label: "Cybersecurity" },
+                    { icon: "pen", label: "Product & UX" },
+                  ].map((t) => (
+                    <button
+                      key={t.label}
+                      type="button"
+                      onClick={() => navigate("courses")}
+                      className="flex w-full items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 text-left transition-colors hover:bg-lime/30"
+                    >
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-ink text-lime">
+                        <Icon name={t.icon} size={14} />
+                      </span>
+                      <span className="text-[0.78rem] font-medium text-ink">{t.label}</span>
+                      <Icon name="arrowRight" size={13} className="ml-auto text-muted" />
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -617,16 +549,15 @@ function FaqPreview() {
           <div className="mt-6 rounded-2xl border border-line bg-paper p-4">
             <div className="flex items-center gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-plum text-lime">
-                <Icon name="sparkle" size={18} />
+                <Icon name="mail" size={18} />
               </span>
               <div>
-                <p className="text-[0.82rem] font-semibold text-ink">Still deciding?</p>
-                <p className="text-[0.68rem] leading-snug text-muted">Ask the mentor, or talk to a human on our team.</p>
+                <p className="text-[0.82rem] font-semibold text-ink">Have a question?</p>
+                <p className="text-[0.68rem] leading-snug text-muted">Our team replies within 4 hours, Mon–Sat.</p>
               </div>
             </div>
-            <div className="mt-3 flex gap-2">
-              <a href="#/dashboard" className="btn btn-sm btn-lime flex-1">Ask the mentor</a>
-              <a href="#/contact" className="btn btn-sm btn-outline flex-1">Contact us</a>
+            <div className="mt-3">
+              <a href="#/contact" className="btn btn-sm btn-primary w-full">Contact us</a>
             </div>
           </div>
           <div className="mt-4 flex items-center gap-4 text-[0.68rem] text-muted">
@@ -658,8 +589,8 @@ export default function Home() {
       <Categories />
       <Featured />
       <CareerTracks />
-      <MentorTeaser />
-      <OfferBanner />
+      <CareerPathsHighlight />
+      <CatalogueTeaser />
       <FaqPreview />
 
       <section className="bg-plum py-12 text-white">
@@ -678,9 +609,9 @@ export default function Home() {
               </a>
             </div>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
-              {stats.slice(0, 3).map((s) => (
-                <p key={s.label} className="text-[0.66rem] text-white/45">
-                  <span className="font-display text-[0.95rem] font-semibold text-white">{s.value}</span> {s.label}
+              {["Instant access after payment", "7-day money-back guarantee", "Certificate on completion"].map((label) => (
+                <p key={label} className="flex items-center gap-1.5 text-[0.66rem] text-white/55">
+                  <Icon name="checkCircle" size={12} className="text-lime" /> {label}
                 </p>
               ))}
             </div>

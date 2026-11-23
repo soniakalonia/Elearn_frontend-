@@ -67,7 +67,9 @@ export default function Footer() {
       <div className="wrap pb-8 pt-12 lg:pt-14">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.45fr_.75fr_.8fr_.9fr_1.35fr] lg:gap-8">
           <div>
-            <Logo light />
+<div className="inline-flex max-h-10 items-center justify-center rounded-lg bg-white px-2 py-1.5">
+  <Logo light compact />
+</div>
             <p className="mt-4 max-w-[15rem] text-[0.8rem] leading-relaxed text-white/55">
               A career school for the work that is coming next. Practitioner-led courses, real projects and an AI mentor
               in your corner.

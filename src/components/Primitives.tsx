@@ -5,11 +5,16 @@ import { useShop, type UiCourse } from "@/lib/store";
 import { absoluteUploadUrl } from "@/lib/api";
 import { formatINR } from "@/lib/data";
 
-/* ---------------- Logo ---------------- */
+import logoImg from "@/assests/logo.png";
+
 export function Logo({ light, compact }: { light?: boolean; compact?: boolean }) {
   return (
     <span className={cn("flex items-center gap-2 font-display font-bold tracking-tight", light ? "text-white" : "text-ink")}>
-      <span className="grid h-8 w-8 place-items-center rounded-lg bg-lime text-ink">E</span>
+      <img 
+        src={logoImg} 
+        alt="Elearn Hub" 
+        className="h-22 w-auto object-contain" 
+      />
       {!compact && <span className="text-[1.05rem]">Elearn Hub</span>}
     </span>
   );
