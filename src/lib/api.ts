@@ -31,6 +31,72 @@ export type BackendUser = {
   role: "user" | "admin"; avatar: string | null; isVerified: boolean;
 };
 
+export type CounsellingPlan = {
+  id: number;
+  durationMinutes: number;
+  preAmount: number;
+  totalAmount: number;
+  remainingAmount: number;
+  isActive: boolean;
+};
+
+export type CounsellingOption = {
+  id: number;
+  label: string;
+  imageUrl: string | null;
+};
+
+export type CounsellingQuestion = {
+  id: number;
+  questionText: string;
+  sortOrder: number;
+  options: CounsellingOption[];
+};
+
+export type CounsellingOptions = CounsellingQuestion[];
+
+export type CounsellingBooking = {
+  id: number;
+  bookingCode: string;
+  userId: number;
+  planId: number;
+  durationMinutes: number;
+  answers: Record<number, string>;
+  preferredDate: string;
+  preferredTime: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  preAmount: number;
+  totalAmount: number;
+  remainingAmount: number;
+  status: "PENDING_PAYMENT" | "PRE_PAID" | "COMPLETED" | "CANCELLED";
+  createdAt: string;
+  updatedAt: string;
+  userName?: string | null;
+  userEmail?: string | null;
+};
+
+export type CounsellingPaymentInfo = {
+  paymentId: number;
+  type: "PRE" | "POST";
+  amount: number;
+  razorpayOrderId: string;
+  razorpayKey: string;
+  prefill: { name: string; email: string; contact: string };
+  notes: Record<string, string>;
+};
+
+export type CreateCounsellingBookingInput = {
+  planId: number;
+  answers: Record<number, string>;
+  preferredDate: string;
+  preferredTime: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+};
+
 export type BackendUserRow = BackendUser & {
   isActive: boolean; lastLoginAt: string | null; createdAt: string;
 };
@@ -58,7 +124,6 @@ export type BackendCourse = {
   updatedAt: string;
 };
 
-
 export type BackendPath = {
   id: number;
   title: string;
@@ -66,12 +131,13 @@ export type BackendPath = {
   imageUrl: string | null;
   duration: string | null;
   level: string | null;
-  skills: string[];        // array in JS, JSON in DB
-  outcomes: string;        // newline-separated
-  steps: string;           // newline-separated
+  skills: string[];
+  outcomes: string;
+  steps: string;
   categoryId: number;
   categoryName: string;
 };
+
 export type BackendEnrollment = {
   id: number;
   userId: number;
@@ -103,6 +169,7 @@ export type BackendOrder = {
   itemsSummary: string;
   items?: { id: number; courseId: number; title: string; price: number }[];
 };
+
 export type AdminStatsTotals = {
   revenue: number;
   paidOrders: number;
@@ -176,18 +243,8 @@ export const api = {
     return request<{ courses: BackendCourse[] }>(`/courses${q.toString() ? "?" + q.toString() : ""}`);
   },
   getCourse: (id: number) => request<{ course: BackendCourse }>(`/courses/${id}`),
-  createCourse: (body: {
-    title: string; shortDescription?: string; description?: string; objectives?: string;
-    categoryId: number; originalPrice: number; discountPrice: number;
-    status: "draft" | "live" | "paused";
-    imageUrl?: string | null; offerText?: string | null; courseLength?: string | null;
-  }) => request<{ course: BackendCourse }>("/courses", { method: "POST", body: JSON.stringify(body) }),
-  updateCourse: (id: number, patch: Partial<{
-    title: string; shortDescription: string; description: string; objectives: string;
-    categoryId: number; originalPrice: number; discountPrice: number;
-    status: "draft" | "live" | "paused";
-    imageUrl: string | null; offerText: string | null; courseLength: string | null;
-  }>) => request<{ course: BackendCourse }>(`/courses/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  createCourse: (body: any) => request<{ course: BackendCourse }>("/courses", { method: "POST", body: JSON.stringify(body) }),
+  updateCourse: (id: number, patch: any) => request<{ course: BackendCourse }>(`/courses/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deleteCourse: (id: number) => request<{}>(`/courses/${id}`, { method: "DELETE" }),
   uploadCourseImage: async (file: File) => {
     const form = new FormData();
@@ -203,32 +260,28 @@ export const api = {
     return json.data as { imageUrl: string };
   },
 
-  listCart: () => request<{ items: { id: number; courseId: number; title: string; price: number; imageUrl: string | null }[] }>("/cart"),
-  addToCart: (courseId: number) => request<{ items: { id: number; courseId: number; title: string; price: number; imageUrl: string | null }[] }>("/cart", { method: "POST", body: JSON.stringify({ courseId }) }),
-  removeFromCart: (courseId: number) => request<{ items: { id: number; courseId: number; title: string; price: number; imageUrl: string | null }[] }>(`/cart/${courseId}`, { method: "DELETE" }),
+  listCart: () => request<any>("/cart"),
+  addToCart: (courseId: number) => request<any>("/cart", { method: "POST", body: JSON.stringify({ courseId }) }),
+  removeFromCart: (courseId: number) => request<any>(`/cart/${courseId}`, { method: "DELETE" }),
 
   listWishlist: () => request<{ courseIds: number[] }>("/wishlist"),
   toggleWishlist: (courseId: number) => request<{ added: boolean; courseIds: number[] }>("/wishlist/toggle", { method: "POST", body: JSON.stringify({ courseId }) }),
-   listPaths: () => request<{ paths: BackendPath[] }>("/paths"),
+  
+  listPaths: () => request<{ paths: BackendPath[] }>("/paths"),
   createPath: (body: any) => request<{ path: BackendPath }>("/paths", { method: "POST", body: JSON.stringify(body) }),
   updatePath: (id: number, patch: any) => request<{ path: BackendPath }>(`/paths/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   deletePath: (id: number) => request<{}>(`/paths/${id}`, { method: "DELETE" }),
 
-    listMyEnrollments: () =>
-    request<{ enrollments: BackendEnrollment[] }>("/enrollments/mine"),
-  enrollmentStats: () =>
-    request<{ stats: { total: number; completed: number; progress_sum: number } }>("/enrollments/stats"),
-  createEnrollment: (courseId: number) =>
-    request<{ enrollment: BackendEnrollment }>("/enrollments", { method: "POST", body: JSON.stringify({ courseId }) }),
+  listMyEnrollments: () => request<{ enrollments: BackendEnrollment[] }>("/enrollments/mine"),
+  enrollmentStats: () => request<any>("/enrollments/stats"),
+  createEnrollment: (courseId: number) => request<{ enrollment: BackendEnrollment }>("/enrollments", { method: "POST", body: JSON.stringify({ courseId }) }),
   updateEnrollmentProgress: (courseId: number, patch: { progress?: number; lastLesson?: string }) =>
     request<{ enrollment: BackendEnrollment }>(`/enrollments/${courseId}/progress`, { method: "PATCH", body: JSON.stringify(patch) }),
 
-  listMyOrders: (limit?: number) =>
-    request<{ orders: BackendOrder[] }>(`/orders/mine${limit ? `?limit=${limit}` : ""}`),
-  getOrder: (id: number) =>
-    request<{ order: BackendOrder }>(`/orders/${id}`),
-  createOrder: (body: { items: { courseId: number; title: string; price: number }[]; subtotal: number; discount: number; total: number; paymentMethod?: string; paymentRef?: string }) =>
-    request<{ order: BackendOrder }>("/orders", { method: "POST", body: JSON.stringify(body) }),
+  listMyOrders: (limit?: number) => request<{ orders: BackendOrder[] }>(`/orders/mine${limit ? `?limit=${limit}` : ""}`),
+  getOrder: (id: number) => request<{ order: BackendOrder }>(`/orders/${id}`),
+  createOrder: (body: any) => request<{ order: BackendOrder }>("/orders", { method: "POST", body: JSON.stringify(body) }),
+  
   getAdminStats: (params?: { range?: string; start?: string; end?: string }) => {
     const q = new URLSearchParams();
     if (params?.range) q.set("range", params.range);
@@ -236,7 +289,7 @@ export const api = {
     if (params?.end) q.set("end", params.end);
     return request<AdminStats>(`/admin/stats?${q.toString()}`);
   },
-    getAdminOrders: (params: { page: number; limit: number; range?: string; start?: string; end?: string }) => {
+  getAdminOrders: (params: { page: number; limit: number; range?: string; start?: string; end?: string }) => {
     const q = new URLSearchParams();
     q.set("page", String(params.page));
     q.set("limit", String(params.limit));
@@ -246,32 +299,51 @@ export const api = {
     return request<{ orders: AdminOrderRow[]; total: number; page: number; limit: number }>(`/admin/orders?${q.toString()}`);
   },
 
-  createRazorpayOrder: (body: { name: string; email: string; phone: string; country: string }) =>
-    request<{
-      orderId: number;
-      orderCode: string;
-      razorpayOrderId: string;
-      amount: number;
-      currency: string;
-      key: string;
-      prefill: { name: string; email: string; contact: string };
-      notes: Record<string, string>;
-    }>("/payments/razorpay/create", { method: "POST", body: JSON.stringify(body) }),
+  createRazorpayOrder: (body: any) => request<any>("/payments/razorpay/create", { method: "POST", body: JSON.stringify(body) }),
+  verifyRazorpayPayment: (body: any) => request<any>("/payments/razorpay/verify", { method: "POST", body: JSON.stringify(body) }),
 
-  verifyRazorpayPayment: (body: {
-    orderId: number;
-    razorpay_order_id: string;
-    razorpay_payment_id: string;
-    razorpay_signature: string;
-  }) =>
-    request<{ orderId: number; orderCode: string; status: string; total: number; alreadyPaid?: boolean }>(
-      "/payments/razorpay/verify",
-      { method: "POST", body: JSON.stringify(body) }
-    ),
+  /* COUNSELLING (user) */
+  counsellingPlans: () => request<{ plans: CounsellingPlan[] }>("/counselling/plans"),
+  counsellingOptions: () => request<{ questions: CounsellingOptions }>("/counselling/options"),
+  counsellingMyBookings: () => request<{ bookings: CounsellingBooking[] }>("/counselling/my-bookings"),
+  counsellingCreateBooking: (body: CreateCounsellingBookingInput) =>
+    request<{ booking: CounsellingBooking; payment: CounsellingPaymentInfo }>("/counselling/book", { method: "POST", body: JSON.stringify(body) }),
+  counsellingVerifyPre: (bookingId: number, body: any) =>
+    request<{ booking: CounsellingBooking; alreadyPaid: boolean }>(`/counselling/${bookingId}/verify-pre`, { method: "POST", body: JSON.stringify(body) }),
+  counsellingPayPost: (bookingId: number) =>
+    request<any>(`/counselling/${bookingId}/pay-post`, { method: "POST" }),
+  counsellingVerifyPost: (bookingId: number, body: any) =>
+    request<{ booking: CounsellingBooking; alreadyPaid: boolean }>(`/counselling/${bookingId}/verify-post`, { method: "POST", body: JSON.stringify(body) }),
+
+  /* COUNSELLING (admin) */
+  adminCounsellingPlans: () => request<{ plans: CounsellingPlan[] }>("/admin/counselling/plans"),
+  adminCounsellingUpdatePlan: (duration: number, body: { preAmount: number; totalAmount: number; isActive?: boolean }) =>
+    request<{ plan: CounsellingPlan }>(`/admin/counselling/plans/${duration}`, { method: "PUT", body: JSON.stringify(body) }),
+  adminCounsellingDeletePlan: (id: number) => request<{}>(`/admin/counselling/plans/${id}`, { method: "DELETE" }),
+  
+  adminCounsellingQuestions: () => request<{ questions: CounsellingQuestion[] }>("/admin/counselling/questions"),
+  adminCounsellingCreateQuestion: (body: { questionText: string; sortOrder?: number }) =>
+    request<{ question: CounsellingQuestion }>("/admin/counselling/questions", { method: "POST", body: JSON.stringify(body) }),
+  adminCounsellingUpdateQuestion: (id: number, body: { questionText: string; sortOrder?: number }) =>
+    request<{ question: CounsellingQuestion }>(`/admin/counselling/questions/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  adminCounsellingDeleteQuestion: (id: number) => request<{}>(`/admin/counselling/questions/${id}`, { method: "DELETE" }),
+  
+  adminCounsellingCreateOption: (formData: FormData) =>
+    request<{ option: CounsellingOption }>("/admin/counselling/options", { method: "POST", body: formData }),
+  adminCounsellingUpdateOption: (id: number, formData: FormData) =>
+    request<{ option: CounsellingOption }>(`/admin/counselling/options/${id}`, { method: "PUT", body: formData }),
+  adminCounsellingDeleteOption: (id: number) => request<{}>(`/admin/counselling/options/${id}`, { method: "DELETE" }),
+
+  adminCounsellingBookings: (params: { range?: string; page?: number; limit?: number } = {}) => {
+    const q = new URLSearchParams();
+    if (params.range) q.set("range", params.range);
+    if (params.page) q.set("page", String(params.page));
+    if (params.limit) q.set("limit", String(params.limit));
+    return request<{ bookings: CounsellingBooking[]; total: number; page: number; limit: number }>(`/admin/counselling/bookings?${q.toString()}`);
+  },
+  adminCounsellingStats: (range: string = "all") => request<{ range: string; total: number }>(`/admin/counselling/stats?range=${range}`), 
 };
-/**
- * Loads the Razorpay Checkout script once and caches the promise.
- */
+
 let razorpayScriptPromise: Promise<void> | null = null;
 export function loadRazorpayScript(): Promise<void> {
   if (typeof window === "undefined") return Promise.reject(new Error("No window"));

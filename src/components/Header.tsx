@@ -6,7 +6,6 @@ import { formatINR } from "@/lib/data";
 import { absoluteUploadUrl } from "@/lib/api";
 import { cn } from "@/utils/cn";
 
-
 function SearchBox({ mobile = false }: { mobile?: boolean }) {
   const { navigate, setSearchTerm, toast, courses } = useShop();
   const [q, setQ] = useState("");
@@ -150,47 +149,86 @@ export default function Header() {
 
   return (
     <header className="relative z-40">
-<div className="bg-plum text-white">
-  <div className="wrap flex h-9 items-center justify-between gap-4 text-[0.7rem]">
-    <p className="flex min-w-0 items-center gap-2 truncate">
-      <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-lime text-ink">
-        <Icon name="sparkle" size={10} strokeWidth={2} />
-      </span>
-      <span className="truncate">
-        Practitioner-led courses built around real job roles ·{" "}
-        <span className="font-semibold text-lime">start learning today</span>
-      </span>
-    </p>
-    <div className="hidden shrink-0 items-center gap-5 text-white/70 md:flex">
-      <a href="#/courses" className="transition-colors hover:text-lime">Browse courses</a>
-      <span className="h-3 w-px bg-white/20" />
-      <a href="#/contact" className="transition-colors hover:text-lime">Contact us</a>
-    </div>
-  </div>
-</div>
+      <div className="bg-plum text-white">
+        <div className="wrap flex h-9 items-center justify-between gap-4 text-[0.7rem]">
+          <p className="flex min-w-0 items-center gap-2 truncate">
+            <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-lime text-ink">
+              <Icon name="sparkle" size={10} strokeWidth={2} />
+            </span>
+            <span className="truncate">
+              Practitioner-led courses built around real job roles ·{" "}
+              <span className="font-semibold text-lime">start learning today</span>
+            </span>
+          </p>
+          <div className="hidden shrink-0 items-center gap-5 text-white/70 md:flex">
+            <a href="/courses" className="transition-colors hover:text-lime">Browse courses</a>
+            <span className="h-3 w-px bg-white/20" />
+            <a href="/contact" className="transition-colors hover:text-lime">Contact us</a>
+          </div>
+        </div>
+      </div>
 
       <div className="sticky top-0 z-40">
         <div className="border-b border-line bg-paper/95 backdrop-blur-md">
           <div className="wrap flex h-[66px] items-center gap-4">
-            <a href="#/home" aria-label="Elearn Hub home" className="shrink-0 transition-opacity hover:opacity-80">
-             <Logo compact />
+            <a href="/home" aria-label="Elearn Hub home" className="shrink-0 transition-opacity hover:opacity-80">
+              <Logo compact />
             </a>
 
             <div className="ml-2 hidden flex-1 justify-center lg:flex">
               <SearchBox />
             </div>
 
+
             <nav className="hidden items-center gap-1 md:flex" aria-label="Main navigation">
-              <a href="#/courses" className={cn("rounded-full px-3.5 py-2 text-[0.79rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink", isActive("courses") && "bg-cream text-ink")}>Courses</a>
-              <a href="#/paths" className={cn("hidden rounded-full px-3.5 py-2 text-[0.79rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink lg:block", isActive("paths") && "bg-cream text-ink")}>Career tracks</a>
-              <a href="#/contact" className={cn("rounded-full px-3.5 py-2 text-[0.79rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink", isActive("contact") && "bg-cream text-ink")}>Contact us</a>
+              <a
+                href="/courses"
+                className={cn(
+                  "rounded-full px-3.5 py-2 text-[0.79rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink",
+                  isActive("courses") && "bg-cream text-ink"
+                )}
+              >
+                Courses
+              </a>
+
+              <a
+                href="/paths"
+                className={cn(
+                  "hidden rounded-full px-3.5 py-2 text-[0.79rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink lg:block",
+                  isActive("paths") && "bg-cream text-ink"
+                )}
+              >
+                Career tracks
+              </a>
+
+              {/* NEW: Counselling Link */}
+              <a
+                href="/counselling"
+                className={cn(
+                  "rounded-full px-3.5 py-2 text-[0.79rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink",
+                  isActive("counselling") && "bg-cream text-ink"
+                )}
+              >
+                Counselling
+              </a>
+
+              <a
+                href="/contact"
+                className={cn(
+                  "rounded-full px-3.5 py-2 text-[0.79rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink",
+                  isActive("contact") && "bg-cream text-ink"
+                )}
+              >
+                Contact us
+              </a>
             </nav>
+
 
             <div className="ml-auto flex items-center gap-1 md:gap-2">
               <button type="button" onClick={() => setMobileSearch((s) => !s)} aria-label="Search" className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-cream hover:text-ink lg:hidden">
                 <Icon name="search" size={18} />
               </button>
-              <a href="#/wishlist" aria-label={`Wishlist (${wishlistCount} items)`} className="relative hidden h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-cream hover:text-ink md:grid">
+              <a href="/wishlist" aria-label={`Wishlist (${wishlistCount} items)`} className="relative hidden h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-cream hover:text-ink md:grid">
                 <Icon name="heart" size={18} />
                 {wishlistCount > 0 && (
                   <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-ink px-1 text-[0.56rem] font-semibold text-white">{wishlistCount}</span>
@@ -223,9 +261,18 @@ export default function Header() {
                         </span>
                       </div>
                       <div className="p-1.5">
-                        <a href={account.role === "admin" ? "#/admin" : "#/dashboard"} onClick={() => setAccountOpen(false)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[0.74rem] font-medium text-ink-soft hover:bg-cream hover:text-ink">
+                        <a href={account.role === "admin" ? "/admin" : "/dashboard"} onClick={() => setAccountOpen(false)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[0.74rem] font-medium text-ink-soft hover:bg-cream hover:text-ink">
                           <Icon name="layout" size={14} /> {account.role === "admin" ? "Admin console" : "My dashboard"}
                         </a>
+                        {account.role !== "admin" && (
+                          <a
+                            href="/my-bookings"
+                            onClick={() => setAccountOpen(false)}
+                            className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[0.74rem] font-medium text-ink-soft hover:bg-cream hover:text-ink"
+                          >
+                            <Icon name="calendar" size={14} /> My Counselling Bookings
+                          </a>
+                        )}
                         <button type="button" onClick={() => { setAccountOpen(false); signOut(); }} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[0.74rem] font-medium text-coral hover:bg-cream">
                           <Icon name="logout" size={14} /> Sign out
                         </button>
@@ -257,18 +304,18 @@ export default function Header() {
         <div className="hidden border-b border-line bg-paper/90 backdrop-blur-md xl:block">
           <div className="wrap flex h-11 items-center justify-between gap-4">
             <nav className="hide-scrollbar flex items-center gap-0.5 overflow-x-auto" aria-label="Course categories">
-              <a href="#/courses" className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.73rem] font-medium transition-colors hover:bg-cream hover:text-ink", route.startsWith("courses") ? "bg-cream text-ink" : "text-ink-soft")}>
+              <a href="/courses" className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.73rem] font-medium transition-colors hover:bg-cream hover:text-ink", route.startsWith("courses") ? "bg-cream text-ink" : "text-ink-soft")}>
                 <Icon name="grid" size={13} className="text-coral" /> All courses
               </a>
               {categories.slice(0, 6).map((cat) => (
-                <a key={cat.id} href={`#/courses?category=${cat.id}`} className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[0.73rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink">
+                <a key={cat.id} href={`/courses?category=${cat.id}`} className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[0.73rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink">
                   <span className="h-1.5 w-1.5 rounded-full bg-lime-deep" />
                   {cat.name}
                 </a>
               ))}
             </nav>
             <div className="flex shrink-0 items-center gap-4 text-[0.73rem] font-medium text-ink-soft">
-              <a href="#/wishlist" className="flex items-center gap-1.5 transition-colors hover:text-ink"><Icon name="heart" size={12} /> Wishlist</a>
+              <a href="/wishlist" className="flex items-center gap-1.5 transition-colors hover:text-ink"><Icon name="heart" size={12} /> Wishlist</a>
             </div>
           </div>
         </div>
@@ -283,11 +330,15 @@ export default function Header() {
                     {[
                       { label: "All courses", href: "courses", icon: "grid" },
                       { label: "Learning paths", href: "paths", icon: "route" },
+                      { label: "Counselling", href: "counselling", icon: "users" },
                       { label: "Contact us", href: "contact", icon: "mail" },
                       ...(account ? [{ label: "My learning", href: "dashboard", icon: "graduation" }] : []),
+                      ...(account?.role !== "admin" && account ? [
+                        { label: "My Counselling Bookings", href: "my-bookings", icon: "calendar" }
+                      ] : []),
                       ...(account?.role === "admin" ? [{ label: "Admin console", href: "admin", icon: "settings" }] : []),
                     ].map((item) => (
-                      <a key={item.href} href={`#/${item.href}`} className="flex items-center gap-2.5 rounded-xl px-2 py-2.5 text-[0.85rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink">
+                      <a key={item.href} href={`/${item.href}`} className="flex items-center gap-2.5 rounded-xl px-2 py-2.5 text-[0.85rem] font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink">
                         <Icon name={item.icon} size={16} className="text-muted" />
                         {item.label}
                         <Icon name="chevronRight" size={13} className="ml-auto text-muted" />
@@ -299,7 +350,7 @@ export default function Header() {
                   <p className="eyebrow mb-3">Browse categories</p>
                   <div className="grid gap-1">
                     {categories.slice(0, 6).map((cat) => (
-                      <a key={cat.id} href={`#/courses?category=${cat.id}`} className="flex items-center gap-2.5 rounded-xl px-2 py-2 text-[0.82rem] text-ink-soft transition-colors hover:bg-cream hover:text-ink">
+                      <a key={cat.id} href={`/courses?category=${cat.id}`} className="flex items-center gap-2.5 rounded-xl px-2 py-2 text-[0.82rem] text-ink-soft transition-colors hover:bg-cream hover:text-ink">
                         <span className="grid h-6 w-6 place-items-center rounded-lg bg-cream"><Icon name="grid" size={13} /></span>
                         {cat.name}
                         <span className="ml-auto text-[0.66rem] text-muted">{cat.count}</span>
@@ -311,7 +362,7 @@ export default function Header() {
               <div className="mt-5 border-t border-line pt-5">
                 {account ? (
                   <div className="grid grid-cols-2 gap-2">
-                    <a href={account.role === "admin" ? "#/admin" : "#/dashboard"} className="btn btn-outline">
+                    <a href={account.role === "admin" ? "/admin" : "/dashboard"} className="btn btn-outline">
                       <Icon name="layout" size={15} /> {account.role === "admin" ? "Admin console" : "My dashboard"}
                     </a>
                     <button type="button" onClick={signOut} className="btn btn-primary">

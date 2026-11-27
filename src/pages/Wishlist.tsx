@@ -23,7 +23,7 @@ export default function Wishlist() {
             {saved.length === 0 ? "Your shortlist starts here." : `${saved.length} course${saved.length > 1 ? "s" : ""} · add them to your bag whenever you're ready.`}
           </p>
         </div>
-        <a href="#/courses" className="btn btn-sm btn-outline"><Icon name="plus" size={14} /> Add more courses</a>
+        <a href="/courses" className="btn btn-sm btn-outline"><Icon name="plus" size={14} /> Add more courses</a>
       </div>
 
       {saved.length === 0 ? (
@@ -66,7 +66,6 @@ export default function Wishlist() {
               >
                 Add to bag <Icon name="bag" size={14} />
               </button>
-              <button type="button" onClick={() => navigate("pricing")} className="btn btn-outline btn-block btn-sm mt-2">Get all with Pro</button>
             </div>
           </aside>
         </div>
@@ -76,7 +75,7 @@ export default function Wishlist() {
         <section className="mt-12">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 className="font-display text-[1.3rem] font-semibold">You might also like</h2>
-            <a href="#/courses" className="text-[0.7rem] font-semibold text-ink hover:underline">View all courses</a>
+            <a href="/courses" className="text-[0.7rem] font-semibold text-ink hover:underline">View all courses</a>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recommendations.map((course) => <CourseCard key={course.id} course={course} />)}

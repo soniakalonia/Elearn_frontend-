@@ -50,6 +50,7 @@ export type UiPath = {
   categoryId: number;
   categoryName: string;
 };
+
 export type UiEnrollment = {
   id: number;
   courseId: number;
@@ -123,7 +124,7 @@ type ShopValue = {
     status: "draft" | "live" | "paused";
     imageUrl: string | null; offerText: string | null; courseLength: string | null;
   }>) => Promise<boolean>;
-    enrollments: UiEnrollment[];
+  enrollments: UiEnrollment[];
   enrollmentsLoading: boolean;
   refreshEnrollments: () => Promise<void>;
   updateEnrollmentProgress: (courseId: number, patch: { progress?: number; lastLesson?: string }) => Promise<boolean>;
@@ -159,7 +160,7 @@ const ShopContext = createContext<ShopValue | null>(null);
 const COUPONS: Record<string, number> = { ELEARN20: 20, GROW25: 25, FIRST10: 10 };
 
 function parseRoute(): string {
-  const raw = window.location.hash.replace(/^#\/?/, "").trim();
+  const raw = window.location.pathname.replace(/^\/+/, "").trim();
   if (!raw) return "home";
   return raw.replace(/\/+$/, "");
 }
@@ -214,7 +215,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [wishlistIds, setWishlistIds] = useState<number[]>([]);
   const [coupon, setCoupon] = useState<string | null>(null);
   const [paths, setPaths] = useState<UiPath[]>([]);
-    const [enrollments, setEnrollments] = useState<UiEnrollment[]>([]);
+  const [enrollments, setEnrollments] = useState<UiEnrollment[]>([]);
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
   const [orders, setOrders] = useState<UiOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -242,10 +243,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         }))
       );
     } catch {
-      // swallow — loading state handled by caller
+      // swallow
     }
   }, []);
-    const refreshEnrollments = useCallback(async () => {
+
+  const refreshEnrollments = useCallback(async () => {
     if (!account) { setEnrollments([]); return; }
     setEnrollmentsLoading(true);
     try {
@@ -383,14 +385,19 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { refreshCart(); }, [refreshCart]);
   useEffect(() => { refreshWishlist(); }, [refreshWishlist]);
-    useEffect(() => { refreshEnrollments(); }, [refreshEnrollments]);
+  useEffect(() => { refreshEnrollments(); }, [refreshEnrollments]);
   useEffect(() => { refreshOrders(); }, [refreshOrders]);
 
   useEffect(() => {
-    const onHash = () => { setRoute(parseRoute()); window.scrollTo({ top: 0, behavior: "auto" }); };
-    window.addEventListener("hashchange", onHash);
-    if (!window.location.hash) window.location.hash = "#/home";
-    return () => window.removeEventListener("hashchange", onHash);
+    const onPopState = () => {
+      setRoute(parseRoute());
+      window.scrollTo({ top: 0, behavior: "auto" });
+    };
+    window.addEventListener("popstate", onPopState);
+    if (window.location.pathname === "/") {
+      window.history.replaceState(null, "", "/home");
+    }
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   useEffect(() => {
@@ -401,8 +408,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   const navigate = useCallback((path: string) => {
     const clean = path.replace(/^#?\/?/, "");
-    if (parseRoute() === clean) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-    window.location.hash = `#/${clean}`;
+    if (parseRoute() === clean) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    window.history.pushState(null, "", `/${clean}`);
     setRoute(clean);
     window.scrollTo({ top: 0, behavior: "auto" });
   }, []);
@@ -416,13 +426,12 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       }
       setToken(token); setAccount(mapped); setAuthOpen(false);
       toast(mapped.role === "admin" ? "Signed in as admin" : `Welcome back, ${mapped.name.split(" ")[0]}`);
-      setRoute(mapped.role === "admin" ? "admin" : "dashboard");
-      window.location.hash = mapped.role === "admin" ? "#/admin" : "#/dashboard";
+      navigate(mapped.role === "admin" ? "admin" : "dashboard");
       return true;
     } catch (err) {
       toast(err instanceof Error ? err.message : "Login failed", "error"); return false;
     }
-  }, [toast]);
+  }, [navigate, toast]);
 
   const signUp = useCallback(async (name: string, email: string, password: string, _role: Role) => {
     try {
@@ -430,17 +439,18 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       const mapped = toAccount(user);
       setToken(token); setAccount(mapped); setAuthOpen(false);
       toast(`Account created — welcome, ${mapped.name.split(" ")[0]}`);
-      setRoute("dashboard"); window.location.hash = "#/dashboard";
+      navigate("dashboard");
       return true;
     } catch (err) {
       toast(err instanceof Error ? err.message : "Signup failed", "error"); return false;
     }
-  }, [toast]);
+  }, [navigate, toast]);
 
   const signOut = useCallback(() => {
     clearToken(); setAccount(null); setCartItems([]); setWishlistIds([]);
-    toast("Signed out", "info"); setRoute("home"); window.location.hash = "#/home";
-  }, [toast]);
+    toast("Signed out", "info");
+    navigate("home");
+  }, [navigate, toast]);
 
   const openAuth = useCallback((role: Role, mode: AuthMode = "signin") => {
     setAuthRole(role); setAuthMode(mode); setAuthOpen(true);
@@ -518,7 +528,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     cartItems, cartLoading, cartOpen, setCartOpen, addToCart, removeFromCart, refreshCart,
     wishlistIds, toggleWishlist, inWishlist,
     coupon, couponPercent, applyCoupon, removeCoupon,
-    paths, pathsLoading, refreshPaths, createPath, updatePath, deletePath,    enrollments, enrollmentsLoading, refreshEnrollments, updateEnrollmentProgress,
+    paths, pathsLoading, refreshPaths, createPath, updatePath, deletePath, enrollments, enrollmentsLoading, refreshEnrollments, updateEnrollmentProgress,
     orders, ordersLoading, refreshOrders,
   }), [
     route, navigate, toasts, toast, dismissToast, searchTerm,

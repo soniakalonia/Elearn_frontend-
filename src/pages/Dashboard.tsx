@@ -7,12 +7,14 @@ import { absoluteUploadUrl } from "@/lib/api";
 import { formatINR } from "@/lib/data";
 import { cn } from "@/utils/cn";
 
-type Tab = "overview" | "courses" | "career" | "wishlist" | "orders" | "certificates" | "billing" | "settings" | "password";
+
+type Tab = "overview" | "courses" | "career" |"my-bookings" | "wishlist" | "orders" | "certificates" | "billing" | "settings" | "password";
 
 const navItems: { id: Tab; label: string; icon: string }[] = [
   { id: "overview", label: "Dashboard", icon: "layout" },
   { id: "courses", label: "My courses", icon: "book" },
   { id: "career", label: "Career guidance", icon: "sparkle" },
+  { id: "my-bookings", label: "My Counselling Bookings", icon: "calendar" },
   { id: "orders", label: "Orders & invoices", icon: "receipt" },
   { id: "certificates", label: "Certificates", icon: "award" },
   { id: "wishlist", label: "Wishlist", icon: "heart" },
@@ -20,6 +22,7 @@ const navItems: { id: Tab; label: string; icon: string }[] = [
   { id: "settings", label: "Profile", icon: "user" },
   { id: "password", label: "Update password", icon: "lock" },
 ];
+
 
 function parseCourseHours(len: string | null): number {
   if (!len) return 0;

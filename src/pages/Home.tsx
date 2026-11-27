@@ -15,7 +15,7 @@ import {
   // reviews,
   tools,
 } from "@/lib/data";
-import { cn } from "@/utils/cn";
+//import { cn } from "@/utils/cn";
 
 function Hero() {
   const { navigate, setSearchTerm, categories, paths, courses } = useShop();

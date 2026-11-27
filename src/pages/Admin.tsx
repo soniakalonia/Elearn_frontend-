@@ -5,7 +5,7 @@ import { formatINR } from "@/lib/data";
 import { cn } from "@/utils/cn";
 import { useShop, type UiCategory, type UiCourse, type UiPath } from "@/lib/store";
 
-type ATab = "overview" | "orders" | "users" | "categories" | "courses" | "paths" | "profile";
+type ATab = "overview" | "orders" | "users" | "categories" | "courses" | "paths" | "profile" | "counselling";
 
 const adminNav: { id: ATab; label: string; icon: string }[] = [
   { id: "overview", label: "Dashboard", icon: "layout" },
@@ -14,6 +14,7 @@ const adminNav: { id: ATab; label: string; icon: string }[] = [
   { id: "categories", label: "Categories", icon: "grid" },
   { id: "courses", label: "Courses", icon: "book" },
   { id: "paths", label: "Career Tracks", icon: "route" },
+  { id: "counselling", label: "Counselling", icon: "calendar" },
   { id: "profile", label: "Profile", icon: "user" },
 ];
 
@@ -566,7 +567,13 @@ export default function Admin() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setTab(item.id)}
+                  onClick={() => {
+                    if (item.id === "counselling") {
+                      navigate("admin/counselling");
+                      return;
+                    }
+                    setTab(item.id);
+                  }}
                   className={cn(
                     "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[0.76rem] font-medium",
                     tab === item.id ? "bg-white/12 text-white" : "text-white/55 hover:bg-white/5 hover:text-white"
